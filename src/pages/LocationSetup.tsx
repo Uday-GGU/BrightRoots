@@ -225,6 +225,12 @@ export default function LocationSetup() {
                 </div>
               )}
 
+              {/* Debug info - remove in production */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+                  Debug: City="{selectedCity}", Area="{selectedArea}"
+                </div>
+              )}
               <div className="flex space-x-3">
                 <Button
                   onClick={() => setMethod('auto')}
@@ -235,7 +241,7 @@ export default function LocationSetup() {
                 </Button>
                 <Button
                   onClick={handleManualSubmit}
-                  disabled={!selectedCity || !selectedArea}
+                  disabled={!selectedCity || !selectedArea || selectedCity.trim() === '' || selectedArea.trim() === ''}
                   className="flex-1 group"
                 >
                   <span>Continue</span>
