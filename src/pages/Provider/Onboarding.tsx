@@ -5,9 +5,10 @@ import {
   ArrowRight, ArrowLeft, CheckCircle, Navigation, Search
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProvider } from '../../hooks/useProvider';
+import { ProviderService } from '../../services/providerService';
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
-import { OnboardingData } from '../../types';
 
 const cities = [
   'Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 
@@ -35,12 +36,11 @@ const ageGroups = ['3-5 years', '6-8 years', '9-12 years', '13-16 years', '16+ y
 const timings = ['Morning (6-12 PM)', 'Afternoon (12-6 PM)', 'Evening (6-10 PM)', 'Flexible'];
 
 export default function ProviderOnboarding() {
-  const { user } = useAuth();
+  const { user, supabaseUser } = useAuth();
+  const { provider, createProvider } = useProvider();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    step: 1
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Location state
   const [locationMethod, setLocationMethod] = useState<'auto' | 'manual'>('auto');
@@ -53,10 +53,10 @@ export default function ProviderOnboarding() {
   // Business info state
   const [businessInfo, setBusinessInfo] = useState({
     businessName: '',
-    ownerName: user?.name || '',
-    phone: user?.phone || '',
+    ownerName: supabaseUser?.user_metadata?.name || '',
+    phone: '',
     whatsapp: '',
-    email: user?.email || '',
+    email: supabaseUser?.email || '',
     website: ''
   });
 
@@ -77,6 +77,13 @@ export default function ProviderOnboarding() {
 
   const totalSteps = 7;
 
+  // Check if provider already exists
+  useEffect(() => {
+    if (provider) {
+      // Provider already exists, redirect to dashboard
+      navigate('/provider/dashboard');
+    }
+  }, [provider, navigate]);
   const handleAutoDetect = () => {
     setIsDetecting(true);
     
@@ -99,7 +106,9 @@ export default function ProviderOnboarding() {
             setCurrentStep(2);
           }, 2000);
         },
-        (error) => {
+          setSelectedCity(mockLocation.city);
+          setSelectedArea(mockLocation.area);
+          setPincode(mockLocation.pincode);
           setIsDetecting(false);
           setLocationMethod('manual');
           alert('Unable to detect location. Please select manually.');
@@ -118,14 +127,6 @@ export default function ProviderOnboarding() {
       return;
     }
 
-    const location = {
-      city: selectedCity,
-      area: selectedArea,
-      pincode,
-      coordinates: { lat: 28.4595, lng: 77.0266 }
-    };
-
-    setOnboardingData(prev => ({ ...prev, location }));
     setCurrentStep(2);
   };
 
@@ -135,7 +136,6 @@ export default function ProviderOnboarding() {
       return;
     }
 
-    setOnboardingData(prev => ({ ...prev, businessInfo }));
     setCurrentStep(3);
   };
 
@@ -145,7 +145,6 @@ export default function ProviderOnboarding() {
       return;
     }
 
-    setOnboardingData(prev => ({ ...prev, services: selectedServices }));
     setCurrentStep(4);
   };
 
@@ -155,14 +154,66 @@ export default function ProviderOnboarding() {
       return;
     }
 
-    setOnboardingData(prev => ({ ...prev, classDetails }));
     setCurrentStep(5);
   };
 
-  const handleSubmit = () => {
-    // Mock submission
-    alert('Application submitted successfully! We will review and approve your profile within 24-48 hours.');
-    navigate('/provider/dashboard');
+  const handleSubmit = async () => {
+    if (!supabaseUser) {
+      alert('Authentication required');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Create provider record
+      const providerData = {
+        user_id: supabaseUser.id,
+        business_name: businessInfo.businessName,
+        owner_name: businessInfo.ownerName,
+        email: businessInfo.email,
+        phone: businessInfo.phone,
+        whatsapp: businessInfo.whatsapp || null,
+        website: businessInfo.website || null,
+        description: `Professional ${selectedServices.join(', ')} services`,
+        address: `${selectedArea}, ${selectedCity}`,
+        city: selectedCity,
+        area: selectedArea,
+        pincode: pincode,
+        latitude: 28.4595, // Mock coordinates
+        longitude: 77.0266,
+        status: 'pending' as const
+      };
+
+      const newProvider = await createProvider(providerData);
+
+      // Add services
+      await ProviderService.addProviderServices(newProvider.id, selectedServices);
+
+      // Create a sample class
+      if (classDetails.ageGroups.length > 0) {
+        await ProviderService.createClass({
+          provider_id: newProvider.id,
+          name: `${selectedServices[0]} Classes`,
+          description: `Professional ${selectedServices[0]} training`,
+          category: selectedServices[0],
+          age_group: classDetails.ageGroups[0],
+          mode: classDetails.type,
+          duration: classDetails.duration,
+          price: classDetails.feeStructure.amount,
+          fee_type: classDetails.feeStructure.type,
+          schedule: classDetails.timings.map(timing => ({ timing }))
+        });
+      }
+
+      alert('Application submitted successfully! We will review and approve your profile within 24-48 hours.');
+      navigate('/provider/dashboard');
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      alert('Failed to submit application. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredCities = cities.filter(city =>
@@ -826,24 +877,24 @@ export default function ProviderOnboarding() {
               <Card className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">Location</h3>
                 <p className="text-sm text-gray-600">
-                  {onboardingData.location?.area}, {onboardingData.location?.city} - {onboardingData.location?.pincode}
+                  {selectedArea}, {selectedCity} - {pincode}
                 </p>
               </Card>
 
               <Card className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">Business Information</h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p><strong>Business:</strong> {onboardingData.businessInfo?.businessName}</p>
-                  <p><strong>Owner:</strong> {onboardingData.businessInfo?.ownerName}</p>
-                  <p><strong>Phone:</strong> {onboardingData.businessInfo?.phone}</p>
-                  <p><strong>Email:</strong> {onboardingData.businessInfo?.email}</p>
+                  <p><strong>Business:</strong> {businessInfo.businessName}</p>
+                  <p><strong>Owner:</strong> {businessInfo.ownerName}</p>
+                  <p><strong>Phone:</strong> {businessInfo.phone}</p>
+                  <p><strong>Email:</strong> {businessInfo.email}</p>
                 </div>
               </Card>
 
               <Card className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">Services</h3>
                 <div className="flex flex-wrap gap-2">
-                  {onboardingData.services?.map(serviceId => {
+                  {selectedServices.map(serviceId => {
                     const service = serviceCategories.find(s => s.id === serviceId);
                     return (
                       <span key={serviceId} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
@@ -857,9 +908,9 @@ export default function ProviderOnboarding() {
               <Card className="p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">Class Details</h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p><strong>Type:</strong> {onboardingData.classDetails?.type}</p>
-                  <p><strong>Duration:</strong> {onboardingData.classDetails?.duration}</p>
-                  <p><strong>Fee:</strong> ₹{onboardingData.classDetails?.feeStructure.amount} {onboardingData.classDetails?.feeStructure.type === 'per_session' ? 'per session' : 'monthly'}</p>
+                  <p><strong>Type:</strong> {classDetails.type}</p>
+                  <p><strong>Duration:</strong> {classDetails.duration}</p>
+                  <p><strong>Fee:</strong> ₹{classDetails.feeStructure.amount} {classDetails.feeStructure.type === 'per_session' ? 'per session' : 'monthly'}</p>
                 </div>
               </Card>
             </div>
@@ -887,10 +938,11 @@ export default function ProviderOnboarding() {
               </Button>
               <Button
                 onClick={handleSubmit}
+                disabled={isSubmitting}
                 className="flex-1"
               >
-                Submit Application
-                <CheckCircle className="w-4 h-4 ml-2" />
+                {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                {!isSubmitting && <CheckCircle className="w-4 h-4 ml-2" />}
               </Button>
             </div>
           </div>

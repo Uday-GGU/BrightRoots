@@ -5,37 +5,42 @@ import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/UI/Button';
 
 export default function ProviderLogin() {
-  const [method, setMethod] = useState<'email' | 'phone'>('email');
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [showOtp, setShowOtp] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
-  const { login } = useAuth();
+  const [name, setName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { login, signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (method === 'phone' && !showOtp) {
-      setShowOtp(true);
+    if (!email.trim() || !password.trim()) {
+      alert('Please fill all required fields');
       return;
     }
     
-    if (method === 'phone' && (!otp || otp.length !== 6)) {
-      alert('Please enter a valid 6-digit OTP');
+    if (isSignup && !name.trim()) {
+      alert('Please enter your name');
       return;
     }
     
-    if (method === 'email' && !password.trim()) {
-      alert('Please enter your password');
-      return;
+    setIsLoading(true);
+    
+    try {
+      if (isSignup) {
+        await signUp(email, password, { name, role: 'provider' });
+        alert('Account created! Please check your email to verify your account.');
+      } else {
+        await login(email, password, 'provider');
+        navigate('/provider/onboarding');
+      }
+    } catch (error: any) {
+      alert(error.message || 'Authentication failed');
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (!identifier.trim()) return;
-    
-    await login(method === 'email' ? 'google' : 'phone', identifier, 'provider');
-    navigate('/provider/onboarding');
   };
 
   return (
@@ -63,133 +68,81 @@ export default function ProviderLogin() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Login Method Selection */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setMethod('email');
-                  setShowOtp(false);
-                  setOtp('');
-                }}
-                className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${
-                  method === 'email'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <Mail className="w-5 h-5 mr-2" />
-                <span className="font-medium">Email</span>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  setMethod('phone');
-                  setShowOtp(false);
-                  setOtp('');
-                }}
-                className={`flex items-center justify-center p-4 border-2 rounded-xl transition-all ${
-                  method === 'phone'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <Phone className="w-5 h-5 mr-2" />
-                <span className="font-medium">Phone</span>
-              </button>
-            </div>
 
-            {/* Input Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {method === 'email' ? 'Email Address' : 'Phone Number'}
-              </label>
-              <div className="relative">
-                {method === 'email' ? (
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                ) : (
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                )}
-                <input
-                  type={method === 'email' ? 'email' : 'tel'}
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={method === 'email' ? 'Enter your email' : 'Enter your phone number'}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  required
-                  disabled={showOtp}
-                />
-              </div>
-            </div>
-
-            {/* Password Field for Email */}
-            {method === 'email' && (
+            {/* Name Field for Signup */}
+            {isSignup && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  Full Name
                 </label>
                 <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your full name"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
                 />
               </div>
             )}
 
-            {/* OTP Field */}
-            {method === 'phone' && showOtp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter OTP
-                </label>
+            {/* Email Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="6-digit OTP"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-center text-lg tracking-widest"
-                  maxLength={6}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
                 />
-                <p className="text-sm text-gray-500 mt-2 text-center">
-                  OTP sent to {identifier}
-                </p>
               </div>
-            )}
+            </div>
 
-            <Button type="submit" size="lg" className="w-full group">
+            {/* Password Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={isSignup ? "Create a password" : "Enter your password"}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                required
+                minLength={6}
+              />
+              {isSignup && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Password must be at least 6 characters long
+                </p>
+              )}
+            </div>
+
+            <Button 
+              type="submit" 
+              size="lg" 
+              className="w-full group"
+              disabled={isLoading}
+            >
               <span>
-                {method === 'phone' && !showOtp ? 'Send OTP' : 
-                 method === 'phone' && showOtp ? 'Verify OTP' : 
-                 isSignup ? 'Create Account' : 'Login'}
+                {isLoading ? 'Please wait...' : isSignup ? 'Create Account' : 'Login'}
               </span>
-              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {!isLoading && <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             </Button>
           </form>
-
-          {method === 'phone' && showOtp && (
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowOtp(false);
-                  setOtp('');
-                }}
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
-                Change phone number
-              </button>
-            </div>
-          )}
 
           <div className="mt-6 text-center">
             <button
               type="button"
               onClick={() => setIsSignup(!isSignup)}
+              disabled={isLoading}
               className="text-sm text-blue-600 hover:text-blue-700"
             >
               {isSignup ? 'Already have an account? Login' : "Don't have an account? Sign up"}
