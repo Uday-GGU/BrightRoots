@@ -201,27 +201,37 @@ export default function LocationSetup() {
               </div>
 
               {/* Area Selection */}
-              {selectedCity && areas[selectedCity as keyof typeof areas] && (
+              {selectedCity && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Select Area in {selectedCity}
                   </label>
-                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
-                    {areas[selectedCity as keyof typeof areas].map(area => (
-                      <button
-                        key={area}
-                        type="button"
-                        onClick={() => setSelectedArea(area)}
-                        className={`p-3 text-sm border rounded-lg transition-all text-left ${
-                          selectedArea === area
-                            ? 'border-purple-500 bg-purple-50 text-purple-700'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {area}
-                      </button>
-                    ))}
-                  </div>
+                  {areas[selectedCity as keyof typeof areas] ? (
+                    <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                      {areas[selectedCity as keyof typeof areas].map(area => (
+                        <button
+                          key={area}
+                          type="button"
+                          onClick={() => setSelectedArea(area)}
+                          className={`p-3 text-sm border rounded-lg transition-all text-left ${
+                            selectedArea === area
+                              ? 'border-purple-500 bg-purple-50 text-purple-700'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {area}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={selectedArea}
+                      onChange={(e) => setSelectedArea(e.target.value)}
+                      placeholder={`Enter area in ${selectedCity}`}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  )}
                 </div>
               )}
 
