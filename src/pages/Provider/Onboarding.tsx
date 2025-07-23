@@ -101,14 +101,14 @@ export default function ProviderOnboarding() {
               }
             };
             
-            setOnboardingData(prev => ({ ...prev, location: mockLocation }));
+            setSelectedCity(mockLocation.city);
+            setSelectedArea(mockLocation.area);
+            setPincode(mockLocation.pincode);
             setIsDetecting(false);
             setCurrentStep(2);
           }, 2000);
         },
-          setSelectedCity(mockLocation.city);
-          setSelectedArea(mockLocation.area);
-          setPincode(mockLocation.pincode);
+        (error) => {
           setIsDetecting(false);
           setLocationMethod('manual');
           alert('Unable to detect location. Please select manually.');
