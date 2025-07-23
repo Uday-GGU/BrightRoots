@@ -107,202 +107,99 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string, role: 'parent' | 'provider' = 'parent') => {
-    // Check if we're using placeholder Supabase credentials
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    // Always use mock authentication for development
+    console.log('Using mock authentication for development');
     
-    if (!supabaseUrl || !supabaseKey || 
-        supabaseUrl === 'https://placeholder.supabase.co' || 
-        supabaseKey === 'placeholder-key' ||
-        supabaseUrl.includes('placeholder') || 
-        supabaseKey.includes('placeholder')) {
-      // Mock authentication for development
-      console.log('Using mock authentication for development');
-      
-      // Create mock user
-      const mockUser = {
-        _id: 'mock-user-id',
-        name: email.split('@')[0],
-        email: email,
-        role: role,
-        phone: role === 'provider' ? '+91 98765 43210' : undefined,
-        businessName: role === 'provider' ? 'Mock Business' : undefined,
-        isVerified: role === 'provider' ? false : undefined,
-        location: role === 'parent' ? undefined : {
-          city: 'Gurgaon',
-          area: 'Sector 15',
-          pincode: '122001'
-        },
-        children: role === 'parent' ? [
-          { name: 'Child 1', age: 8, interests: ['music'] },
-          { name: 'Child 2', age: 12, interests: ['sports'] }
-        ] : undefined
-      };
-      
-      setUser(mockUser);
-      setSupabaseUser({
-        id: 'mock-user-id',
-        email: email,
-        user_metadata: { name: mockUser.name, role: role }
-      } as any);
-      
-      return;
-    }
+    // Create mock user
+    const mockUser = {
+      _id: 'mock-user-id',
+      name: email.split('@')[0],
+      email: email,
+      role: role,
+      phone: role === 'provider' ? '+91 98765 43210' : undefined,
+      businessName: role === 'provider' ? 'Mock Business' : undefined,
+      isVerified: role === 'provider' ? false : undefined,
+      location: role === 'parent' ? undefined : {
+        city: 'Gurgaon',
+        area: 'Sector 15',
+        pincode: '122001'
+      },
+      children: role === 'parent' ? [
+        { name: 'Child 1', age: 8, interests: ['music'] },
+        { name: 'Child 2', age: 12, interests: ['sports'] }
+      ] : undefined
+    };
     
-    // Real Supabase authentication
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Supabase authentication error:', error);
-      throw error;
-    }
+    setUser(mockUser);
+    setSupabaseUser({
+      id: 'mock-user-id',
+      email: email,
+      user_metadata: { name: mockUser.name, role: role }
+    } as any);
+    
+    return;
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
-    // Check if we're using placeholder Supabase credentials
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    // Always use mock sign up for development
+    console.log('Using mock sign up for development');
     
-    if (!supabaseUrl || !supabaseKey || 
-        supabaseUrl === 'https://placeholder.supabase.co' || 
-        supabaseKey === 'placeholder-key' ||
-        supabaseUrl.includes('placeholder') || 
-        supabaseKey.includes('placeholder')) {
-      // Mock sign up for development
-      console.log('Using mock sign up for development');
-      
-      // Simulate successful signup
+    // Simulate successful signup
+    const mockUser = {
+      _id: 'mock-user-id',
+      name: userData.name || email.split('@')[0],
+      email: email,
+      role: userData.role || 'parent',
+      phone: userData.role === 'provider' ? '+91 98765 43210' : undefined,
+      businessName: userData.role === 'provider' ? 'New Business' : undefined,
+      isVerified: false,
+      children: userData.role === 'parent' ? [] : undefined
+    };
+    
+    setUser(mockUser);
+    setSupabaseUser({
+      id: 'mock-user-id',
+      email: email,
+      user_metadata: { name: mockUser.name, role: userData.role }
+    } as any);
+    
+    return;
+  };
+
+  const signInWithPhone = async (phone: string) => {
+    // Always use mock phone authentication for development
+    console.log('Mock OTP sent to:', phone);
+    return;
+  };
+
+  const verifyOtp = async (phone: string, otp: string) => {
+    // Always use mock OTP verification for development
+    console.log('Mock OTP verification for:', phone, 'with OTP:', otp);
+    
+    // Accept any 6-digit OTP for development
+    if (otp.length === 6) {
       const mockUser = {
         _id: 'mock-user-id',
-        name: userData.name || email.split('@')[0],
-        email: email,
-        role: userData.role || 'parent',
-        phone: userData.role === 'provider' ? '+91 98765 43210' : undefined,
-        businessName: userData.role === 'provider' ? 'New Business' : undefined,
-        isVerified: false,
-        children: userData.role === 'parent' ? [] : undefined
+        name: 'Parent User',
+        email: '',
+        phone: phone,
+        role: 'parent' as const,
+        children: [
+          { name: 'Child 1', age: 8, interests: ['music'] },
+          { name: 'Child 2', age: 12, interests: ['sports'] }
+        ]
       };
       
       setUser(mockUser);
       setSupabaseUser({
         id: 'mock-user-id',
-        email: email,
-        user_metadata: { name: mockUser.name, role: userData.role }
+        phone: phone,
+        user_metadata: { name: mockUser.name, role: 'parent' }
       } as any);
       
       return;
-    }
-    
-    // Real Supabase sign up
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: userData.name,
-            role: userData.role || 'parent'
-          }
-        }
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Supabase sign up error:', error);
-      throw error;
-    }
-  };
-
-  const signInWithPhone = async (phone: string) => {
-    // Check if we're using placeholder Supabase credentials
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey || 
-        supabaseUrl === 'https://placeholder.supabase.co' || 
-        supabaseKey === 'placeholder-key' ||
-        supabaseUrl.includes('placeholder') || 
-        supabaseKey.includes('placeholder')) {
-      // Mock phone authentication for development
-      console.log('Mock OTP sent to:', phone);
-      return;
-    }
-    
-    // Real Supabase phone authentication
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone,
-        options: {
-          data: {
-            role: 'parent'
-          }
-        }
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Supabase phone auth error:', error);
-      throw error;
-    }
-  };
-
-  const verifyOtp = async (phone: string, otp: string) => {
-    // Check if we're using placeholder Supabase credentials
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey || 
-        supabaseUrl === 'https://placeholder.supabase.co' || 
-        supabaseKey === 'placeholder-key' ||
-        supabaseUrl.includes('placeholder') || 
-        supabaseKey.includes('placeholder')) {
-      // Mock OTP verification for development
-      console.log('Mock OTP verification for:', phone, 'with OTP:', otp);
-      
-      // Accept any 6-digit OTP for development
-      if (otp.length === 6) {
-        const mockUser = {
-          _id: 'mock-user-id',
-          name: 'Parent User',
-          email: '',
-          phone: phone,
-          role: 'parent' as const,
-          children: [
-            { name: 'Child 1', age: 8, interests: ['music'] },
-            { name: 'Child 2', age: 12, interests: ['sports'] }
-          ]
-        };
-        
-        setUser(mockUser);
-        setSupabaseUser({
-          id: 'mock-user-id',
-          phone: phone,
-          user_metadata: { name: mockUser.name, role: 'parent' }
-        } as any);
-        
-        return;
-      } else {
-        throw new Error('Invalid OTP. Please enter a 6-digit code.');
-      }
-    }
-    
-    // Real Supabase OTP verification
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        phone,
-        token: otp,
-        type: 'sms'
-      });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Supabase OTP verification error:', error);
-      throw error;
+    } else {
+      throw new Error('Invalid OTP. Please enter a 6-digit code.');
     }
   };
 
