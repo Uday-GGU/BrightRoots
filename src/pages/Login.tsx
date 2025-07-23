@@ -15,21 +15,35 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (method === 'phone' && !showOtp) {
-      // Mock OTP sending
-      setShowOtp(true);
-      return;
+    try {
+      if (method === 'phone' && !showOtp) {
+        // Send OTP
+        await signInWithPhone(identifier);
+        setShowOtp(true);
+        return;
+      }
+      
+      if (method === 'phone' && showOtp) {
+        if (!otp || otp.length !== 6) {
+          alert('Please enter a valid 6-digit OTP');
+          return;
+        }
+        // Verify OTP
+        await verifyOtp(identifier, otp);
+      } else if (method === 'google') {
+        if (!identifier.trim()) {
+          alert('Please enter your email address');
+          return;
+        }
+        // For development, use a default password
+        await login(identifier, 'password123', 'parent');
+      }
+      
+      navigate('/location');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      alert(error.message || 'Login failed. Please try again.');
     }
-    
-    if (method === 'phone' && (!otp || otp.length !== 6)) {
-      alert('Please enter a valid 6-digit OTP');
-      return;
-    }
-    
-    if (!identifier.trim()) return;
-    
-    await login(method, identifier);
-    navigate('/location');
   };
 
   return (
