@@ -52,7 +52,7 @@ export default function ProviderLogin() {
             <Users className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Join EduVerse
+            Join BrightRoots
           </h1>
           <p className="text-gray-600">Start your journey as an education provider</p>
         </div>

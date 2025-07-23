@@ -55,7 +55,7 @@ export default function Login() {
             <BookOpen className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to EduVerse
+            Welcome to BrightRoots
           </h1>
           <p className="text-gray-600">Find the best classes for your child</p>
         </div>
