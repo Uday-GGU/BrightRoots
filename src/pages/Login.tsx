@@ -9,7 +9,7 @@ export default function Login() {
   const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
   const [showOtp, setShowOtp] = useState(false);
-  const { login } = useAuth();
+  const { login, signInWithPhone, verifyOtp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {

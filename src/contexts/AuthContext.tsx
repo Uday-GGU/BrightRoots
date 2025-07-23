@@ -111,8 +111,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
-    if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co' || 
-        !supabaseKey || supabaseKey === 'placeholder-key') {
+    if (!supabaseUrl || !supabaseKey || 
+        supabaseUrl === 'https://placeholder.supabase.co' || 
+        supabaseKey === 'placeholder-key' ||
+        supabaseUrl.includes('placeholder') || 
+        supabaseKey.includes('placeholder')) {
       // Mock authentication for development
       console.log('Using mock authentication for development');
       
@@ -165,8 +168,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
-    if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co' || 
-        !supabaseKey || supabaseKey === 'placeholder-key') {
+    if (!supabaseUrl || !supabaseKey || 
+        supabaseUrl === 'https://placeholder.supabase.co' || 
+        supabaseKey === 'placeholder-key' ||
+        supabaseUrl.includes('placeholder') || 
+        supabaseKey.includes('placeholder')) {
       // Mock sign up for development
       console.log('Using mock sign up for development');
       
@@ -217,8 +223,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
-    if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co' || 
-        !supabaseKey || supabaseKey === 'placeholder-key') {
+    if (!supabaseUrl || !supabaseKey || 
+        supabaseUrl === 'https://placeholder.supabase.co' || 
+        supabaseKey === 'placeholder-key' ||
+        supabaseUrl.includes('placeholder') || 
+        supabaseKey.includes('placeholder')) {
       // Mock phone authentication for development
       console.log('Mock OTP sent to:', phone);
       return;
@@ -247,8 +256,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
-    if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co' || 
-        !supabaseKey || supabaseKey === 'placeholder-key') {
+    if (!supabaseUrl || !supabaseKey || 
+        supabaseUrl === 'https://placeholder.supabase.co' || 
+        supabaseKey === 'placeholder-key' ||
+        supabaseUrl.includes('placeholder') || 
+        supabaseKey.includes('placeholder')) {
       // Mock OTP verification for development
       console.log('Mock OTP verification for:', phone, 'with OTP:', otp);
       
