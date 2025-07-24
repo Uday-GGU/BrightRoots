@@ -14,9 +14,14 @@ type Enquiry = Database['public']['Tables']['enquiries']['Row'];
 export class ProviderService {
   // Provider CRUD operations
   static async createProvider(data: ProviderInsert): Promise<Provider> {
+    const providerData = {
+      ...data,
+      is_published: data.status === 'approved' // Auto-publish if approved
+    };
+    
     const { data: provider, error } = await supabase
       .from('providers')
-      .insert(data)
+      .insert(providerData)
       .select()
       .single();
 
@@ -47,15 +52,88 @@ export class ProviderService {
   }
 
   static async updateProvider(id: string, data: ProviderUpdate): Promise<Provider> {
+    const updateData = {
+      ...data,
+      // Auto-publish when status changes to approved
+      ...(data.status === 'approved' && { is_published: true }),
+      // Unpublish when status changes to rejected or pending
+      ...(data.status && data.status !== 'approved' && { is_published: false })
+    };
+    
     const { data: provider, error } = await supabase
       .from('providers')
-      .update(data)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
     return provider;
+  }
+
+  // Publish/Unpublish providers
+  static async publishProvider(id: string): Promise<Provider> {
+    const { data: provider, error } = await supabase
+      .from('providers')
+      .update({ is_published: true, status: 'approved' })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return provider;
+  }
+
+  static async unpublishProvider(id: string): Promise<Provider> {
+    const { data: provider, error } = await supabase
+      .from('providers')
+      .update({ is_published: false })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return provider;
+  }
+
+  // Fetch published providers for parents
+  static async getPublishedProviders(filters?: {
+    city?: string;
+    area?: string;
+    category?: string;
+    search?: string;
+  }): Promise<any[]> {
+    let query = supabase
+      .from('providers')
+      .select(`
+        *,
+        provider_services(category),
+        provider_classes(id, name, price, mode, age_group, duration),
+        provider_media(file_path, media_type)
+      `)
+      .eq('is_published', true)
+      .eq('status', 'approved');
+
+    if (filters?.city) {
+      query = query.eq('city', filters.city);
+    }
+
+    if (filters?.area) {
+      query = query.eq('area', filters.area);
+    }
+
+    if (filters?.search) {
+      query = query.or(`business_name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching published providers:', error);
+      return [];
+    }
+
+    return data || [];
   }
 
   // Provider Services

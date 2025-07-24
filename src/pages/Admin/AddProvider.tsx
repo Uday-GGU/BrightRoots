@@ -123,32 +123,59 @@ export default function AddProvider() {
     setIsSubmitting(true);
 
     try {
-      // Create new provider
-      const newProvider = {
-        id: Date.now().toString(),
-        businessName: formData.businessName,
-        ownerName: formData.ownerName,
+      console.log('📝 Creating new provider in Supabase...');
+      
+      // Create provider in Supabase
+      const providerData = {
+        user_id: `admin-created-${Date.now()}`, // Temporary user ID for admin-created providers
+        business_name: formData.businessName,
+        owner_name: formData.ownerName,
         email: formData.email,
         phone: formData.phone,
         whatsapp: formData.whatsapp,
         website: formData.website,
         description: formData.description,
+        address: `${formData.area}, ${formData.city}`,
         city: formData.city,
         area: formData.area,
         pincode: formData.pincode,
-        categories: formData.categories,
         status: formData.status,
-        createdAt: new Date().toISOString().split('T')[0]
+        is_published: formData.status === 'approved', // Auto-publish if approved
+        latitude: 28.4595, // Mock coordinates
+        longitude: 77.0266
       };
 
-      // Add through data sync manager
-      dataSyncManager.addProvider(newProvider);
+      const newProvider = await ProviderService.createProvider(providerData);
+      console.log('✅ Provider created:', newProvider);
+      
+      // Add services
+      if (formData.categories.length > 0) {
+        await ProviderService.addProviderServices(newProvider.id, formData.categories);
+        console.log('✅ Services added:', formData.categories);
+      }
+      
+      // Create a sample class for each category
+      for (const category of formData.categories) {
+        await ProviderService.createClass({
+          provider_id: newProvider.id,
+          name: `${category.charAt(0).toUpperCase() + category.slice(1)} Classes`,
+          description: `Professional ${category} training and education`,
+          category: category,
+          age_group: '6-16 years',
+          mode: 'offline',
+          duration: '60 minutes',
+          price: 1500,
+          fee_type: 'per_session',
+          schedule: { timings: ['Mon 4-5 PM', 'Wed 4-5 PM', 'Sat 10-11 AM'] }
+        });
+      }
+      console.log('✅ Sample classes created');
 
       alert('Provider added successfully!');
       navigate('/admin/dashboard');
     } catch (error) {
       console.error('Error adding provider:', error);
-      alert('Failed to add provider. Please try again.');
+      alert(`Failed to add provider: ${error.message}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }

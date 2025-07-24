@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Check admin authentication
@@ -44,60 +45,51 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Initialize data sync
-    dataSyncManager.init();
-
-    // Load demo providers
-    loadDemoProviders();
+    // Load providers from Supabase
+    loadProviders();
   }, [navigate]);
 
-  const loadDemoProviders = () => {
-    const demoProviders: Provider[] = [
-      {
-        id: '1',
-        businessName: 'Harmony Music Academy',
-        ownerName: 'Rajesh Kumar',
-        email: 'rajesh@harmonymusic.com',
-        phone: '+91 98765 43210',
-        city: 'Gurgaon',
-        area: 'Sector 15',
-        categories: ['music'],
-        status: 'approved',
-        createdAt: '2025-01-20'
-      },
-      {
-        id: '2',
-        businessName: 'Champions Sports Club',
-        ownerName: 'Priya Sharma',
-        email: 'priya@champions.com',
-        phone: '+91 98765 43211',
-        city: 'Gurgaon',
-        area: 'Phase 2',
-        categories: ['sports'],
-        status: 'pending',
-        createdAt: '2025-01-21'
-      },
-      {
-        id: '3',
-        businessName: 'CodeCraft Academy',
-        ownerName: 'Amit Singh',
-        email: 'amit@codecraft.in',
-        phone: '+91 98765 43212',
-        city: 'Delhi',
-        area: 'Connaught Place',
-        categories: ['coding'],
-        status: 'approved',
-        createdAt: '2025-01-19'
-      }
-    ];
+  const loadProviders = async () => {
+    try {
+      setLoading(true);
+      console.log('🔄 Loading providers from Supabase...');
+      
+      // Get all providers (not just published ones) for admin view
+      const { data, error } = await supabase
+        .from('providers')
+        .select(`
+          *,
+          provider_services(category)
+        `)
+        .order('created_at', { ascending: false });
 
-    // Load from data sync manager or use demo data
-    const savedProviders = dataSyncManager.getProviders();
-    if (savedProviders.length > 0) {
-      setProviders(savedProviders);
-    } else {
-      setProviders(demoProviders);
-      dataSyncManager.saveProviders(demoProviders);
+      if (error) {
+        console.error('❌ Error loading providers:', error);
+        return;
+      }
+
+      // Convert to admin dashboard format
+      const convertedProviders = data.map(provider => ({
+        id: provider.id,
+        businessName: provider.business_name,
+        ownerName: provider.owner_name,
+        email: provider.email,
+        phone: provider.phone,
+        city: provider.city,
+        area: provider.area,
+        categories: provider.provider_services?.map(s => s.category) || [],
+        status: provider.status,
+        createdAt: provider.created_at.split('T')[0], // Format date
+        isPublished: provider.is_published
+      }));
+
+      console.log('✅ Loaded providers:', convertedProviders);
+      setProviders(convertedProviders);
+      
+    } catch (error) {
+      console.error('❌ Error in loadProviders:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -108,21 +100,53 @@ export default function AdminDashboard() {
   };
 
   const handleStatusChange = (providerId: string, newStatus: 'approved' | 'rejected') => {
-    // Update through data sync manager
-    dataSyncManager.updateProviderStatus(providerId, newStatus);
+    const updateStatus = async () => {
+      try {
+        console.log('📢 Updating provider status:', providerId, 'to', newStatus);
+        
+        // Update in Supabase
+        await ProviderService.updateProvider(providerId, { 
+          status: newStatus,
+          // Auto-publish when approved, unpublish when rejected
+          is_published: newStatus === 'approved'
+        });
+        
+        // Reload providers to get updated data
+        await loadProviders();
+        
+        console.log('✅ Provider status updated successfully');
+        
+      } catch (error) {
+        console.error('❌ Error updating provider status:', error);
+        alert('Failed to update provider status. Please try again.');
+      }
+    };
     
-    // Update local state
-    const updatedProviders = providers.map(provider =>
-      provider.id === providerId ? { ...provider, status: newStatus } : provider
-    );
-    setProviders(updatedProviders);
+    updateStatus();
   };
 
   const handleDeleteProvider = (providerId: string) => {
     if (confirm('Are you sure you want to delete this provider?')) {
-      const updatedProviders = providers.filter(provider => provider.id !== providerId);
-      setProviders(updatedProviders);
-      dataSyncManager.saveProviders(updatedProviders);
+      const deleteProvider = async () => {
+        try {
+          // In a real app, you'd have a delete method in ProviderService
+          const { error } = await supabase
+            .from('providers')
+            .delete()
+            .eq('id', providerId);
+            
+          if (error) throw error;
+          
+          // Reload providers
+          await loadProviders();
+          
+        } catch (error) {
+          console.error('❌ Error deleting provider:', error);
+          alert('Failed to delete provider. Please try again.');
+        }
+      };
+      
+      deleteProvider();
     }
   };
 
@@ -394,6 +418,7 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+          )}
 
           {filteredProviders.length === 0 && (
             <div className="text-center py-12">
