@@ -152,6 +152,13 @@ export default function AddProvider() {
         key: 'adminProviders',
         newValue: JSON.stringify(updatedProviders)
       }));
+      
+      // Trigger custom event for cross-system sync
+      window.dispatchEvent(new CustomEvent('providerDataChanged', {
+        detail: { action: 'providerAdded', provider: newProvider }
+      }));
+      
+      console.log('📢 New provider added:', newProvider.businessName);
 
       alert('Provider added successfully!');
       navigate('/admin/dashboard');

@@ -110,11 +110,18 @@ export default function AdminDashboard() {
     setProviders(updatedProviders);
     localStorage.setItem('adminProviders', JSON.stringify(updatedProviders));
     
-    // Trigger storage event for other tabs/windows
+    // Trigger multiple sync mechanisms
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'adminProviders',
       newValue: JSON.stringify(updatedProviders)
     }));
+    
+    // Trigger custom event for cross-system sync
+    window.dispatchEvent(new CustomEvent('providerDataChanged', {
+      detail: { action: 'statusChange', providerId, newStatus }
+    }));
+    
+    console.log('📢 Provider status changed:', providerId, 'to', newStatus);
   };
 
   const handleDeleteProvider = (providerId: string) => {

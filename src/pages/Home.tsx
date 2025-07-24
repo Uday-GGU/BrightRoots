@@ -28,11 +28,17 @@ export default function Home() {
   // Load providers from admin data
   React.useEffect(() => {
     const loadProviders = () => {
+      console.log('🔄 Loading providers from localStorage...');
       const adminProviders = JSON.parse(localStorage.getItem('adminProviders') || '[]');
+      console.log('📊 Raw admin providers:', adminProviders);
       
       // Convert admin provider format to display format
       const convertedProviders = adminProviders
         .filter(provider => provider.status === 'approved') // Only show approved providers
+        .filter(provider => {
+          console.log('🔍 Checking provider:', provider.businessName, 'Status:', provider.status);
+          return true;
+        })
         .map(provider => ({
           id: provider.id,
           name: provider.businessName,
@@ -81,7 +87,7 @@ export default function Home() {
 
     loadProviders();
     
-    // Listen for storage changes to update providers when admin adds new ones
+    // Listen for storage changes and manual refresh events
     const handleStorageChange = (e) => {
       if (e.key === 'adminProviders') {
         console.log('🔄 Storage changed, reloading providers...');
@@ -89,8 +95,26 @@ export default function Home() {
       }
     };
     
+    // Listen for custom refresh events (for cross-system sync)
+    const handleCustomRefresh = () => {
+      console.log('🔄 Custom refresh triggered, reloading providers...');
+      loadProviders();
+    };
+    
+    // Add interval to periodically check for updates (every 5 seconds)
+    const syncInterval = setInterval(() => {
+      console.log('⏰ Periodic sync check...');
+      loadProviders();
+    }, 5000);
+    
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('providerDataChanged', handleCustomRefresh);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('providerDataChanged', handleCustomRefresh);
+      clearInterval(syncInterval);
+    };
   }, []);
 
   const filteredProviders = providers.filter(provider => {
