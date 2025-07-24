@@ -61,13 +61,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       // Try to load from providers table first
-      const { data: provider } = await supabase
+      const { data: provider, error: providerError } = await supabase
         .from('providers')
         .select('*')
         .eq('user_id', userId)
         .single();
 
-      if (provider) {
+      // Check if provider exists (ignore PGRST116 error which means no rows found)
+      if (provider && !providerError) {
         setUser({
           _id: userId,
           name: provider.owner_name,
@@ -89,6 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         });
         return;
+      }
+      
+      // If PGRST116 error or no provider found, continue to create parent user
+      if (providerError && providerError.code !== 'PGRST116') {
+        throw providerError;
       }
 
       // If not a provider, create a basic parent user
