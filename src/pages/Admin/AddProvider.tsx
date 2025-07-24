@@ -69,6 +69,45 @@ export default function AddProvider() {
     }));
   };
 
+  const handleAutoDetect = async () => {
+    setIsDetecting(true);
+    
+    try {
+      // Check if geolocation is supported
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by this browser');
+        return;
+      }
+
+      // Get current position
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+
+      // Mock reverse geocoding (in real app, use Google Maps API or similar)
+      // For demo, we'll set some default values
+      setFormData(prev => ({
+        ...prev,
+        city: 'Gurgaon',
+        area: 'Sector 15',
+        pincode: '122001'
+      }));
+
+      alert('Location detected successfully! (Demo values filled)');
+    } catch (error) {
+      console.error('Error detecting location:', error);
+      alert('Could not detect location. Please enter manually.');
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
