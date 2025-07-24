@@ -31,6 +31,33 @@ export default function ProviderLogin() {
     console.log('📝 Form validation passed, starting authentication...');
     setIsLoading(true);
     
+    // Demo provider login
+    if (email === 'provider@demo.com' && password === 'provider123') {
+      // Create demo provider user
+      localStorage.setItem('demoUser', JSON.stringify({
+        _id: 'demo-provider-1',
+        id: 'demo-provider-1',
+        name: 'Demo Provider',
+        email: 'provider@demo.com',
+        role: 'provider',
+        businessName: 'Demo Music Academy',
+        phone: '+91 98765 43210',
+        isVerified: true,
+        location: {
+          city: 'Gurgaon',
+          area: 'Sector 15',
+          pincode: '122001',
+          coordinates: { lat: 28.4595, lng: 77.0266 }
+        }
+      }));
+      
+      alert('Demo provider login successful! Redirecting to dashboard...');
+      setTimeout(() => {
+        window.location.href = '/provider/dashboard';
+      }, 1000);
+      return;
+    }
+    
     try {
       if (isSignup) {
         console.log('📝 Attempting provider signup...');
@@ -173,6 +200,12 @@ export default function ProviderLogin() {
           </div>
 
           <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <h3 className="text-sm font-medium text-blue-900 mb-2">Demo Credentials:</h3>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p><strong>Provider Login:</strong> provider@demo.com / provider123</p>
+              </div>
+            </div>
             <p className="text-xs text-gray-500 text-center">
               By continuing, you agree to our Terms of Service and Privacy Policy
             </p>

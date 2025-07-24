@@ -31,6 +31,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Check for demo user first
+    const demoUser = localStorage.getItem('demoUser');
+    if (demoUser) {
+      try {
+        const userData = JSON.parse(demoUser);
+        setUser(userData);
+        setIsLoading(false);
+        return;
+      } catch (error) {
+        console.error('Error parsing demo user:', error);
+        localStorage.removeItem('demoUser');
+      }
+    }
+    
     // Handle email confirmation redirects
     const handleAuthRedirect = async () => {
       const { data, error } = await supabase.auth.getSession();
@@ -308,6 +322,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    // Clear demo user
+    localStorage.removeItem('demoUser');
+    setUser(null);
+    
     await supabase.auth.signOut();
   };
 

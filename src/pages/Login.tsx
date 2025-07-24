@@ -14,11 +14,42 @@ export default function Login() {
   const [useMagicLink, setUseMagicLink] = useState(false);
   const [otp, setOtp] = useState('');
   const [showOtp, setShowOtp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { login, signUp, signInWithPhone, verifyOtp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    setIsLoading(true);
+    
+    // Demo login credentials
+    if (identifier === 'parent@demo.com' && password === 'parent123') {
+      // Create demo parent user
+      localStorage.setItem('demoUser', JSON.stringify({
+        _id: 'demo-parent-1',
+        id: 'demo-parent-1',
+        name: 'Demo Parent',
+        email: 'parent@demo.com',
+        role: 'parent',
+        location: {
+          city: 'Gurgaon',
+          area: 'Sector 15',
+          pincode: '122001',
+          coordinates: { lat: 28.4595, lng: 77.0266 }
+        },
+        children: [
+          { name: 'Emma', age: 8, interests: ['music', 'art'] },
+          { name: 'Liam', age: 10, interests: ['coding', 'sports'] }
+        ]
+      }));
+      
+      alert('Demo login successful! Redirecting to home...');
+      setTimeout(() => {
+        window.location.href = '/home';
+      }, 1000);
+      return;
+    }
     
     try {
       if (method === 'phone' && !showOtp) {
@@ -85,6 +116,8 @@ export default function Login() {
       } else {
         alert(error.message || 'Login failed. Please try again.');
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -257,9 +290,10 @@ export default function Login() {
                 {method === 'phone' && !showOtp ? 'Send OTP' : 
                  method === 'phone' && showOtp ? 'Verify OTP' : 
                  method === 'email' && useMagicLink ? 'Send Magic Link' :
-                 method === 'email' && isSignup ? 'Create Account' : 'Login'}
+                 method === 'email' && isSignup ? 'Create Account' : 
+                 isLoading ? 'Logging in...' : 'Login'}
               </span>
-              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {!isLoading && <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             </Button>
           </form>
 
@@ -279,6 +313,12 @@ export default function Login() {
           )}
 
           <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <h3 className="text-sm font-medium text-blue-900 mb-2">Demo Credentials:</h3>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p><strong>Parent Login:</strong> parent@demo.com / parent123</p>
+              </div>
+            </div>
             <p className="text-xs text-gray-500 text-center">
               By continuing, you agree to our Terms of Service and Privacy Policy
             </p>
