@@ -12,11 +12,12 @@ import {
   Calendar,
   DollarSign,
   Eye,
-  CheckCircle
+  CheckCircle,
+  LogOut
 } from 'lucide-react';
 
 export const ProviderDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const stats = [
     { label: 'Total Listings', value: '12', icon: BookOpen, color: 'text-blue-600' },
@@ -47,10 +48,20 @@ export const ProviderDashboard: React.FC = () => {
               <h1 className="text-2xl font-bold text-gray-900">Provider Dashboard</h1>
               <p className="text-gray-600">Welcome back, {user?.name || 'Provider'}!</p>
             </div>
-            <Button variant="primary" className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Add New Listing
-            </Button>
+            <div className="flex items-center space-x-4">
+              <Button variant="primary" className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Add New Listing
+              </Button>
+              <Button 
+                onClick={logout}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </div>

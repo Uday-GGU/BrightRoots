@@ -324,9 +324,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     // Clear demo user
     localStorage.removeItem('demoUser');
+    localStorage.removeItem('adminAuth');
+    localStorage.removeItem('adminUser');
     setUser(null);
     
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    
+    // Redirect to main login page
+    window.location.href = '/';
   };
 
   return (

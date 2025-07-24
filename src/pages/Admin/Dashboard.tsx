@@ -100,7 +100,7 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
     localStorage.removeItem('adminUser');
-    navigate('/admin/login');
+    navigate('/');
   };
 
   const handleStatusChange = (providerId: string, newStatus: 'approved' | 'rejected') => {

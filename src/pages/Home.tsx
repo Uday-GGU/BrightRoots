@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, MapPin, Star, Heart, Filter, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Star, Heart, Filter, ChevronRight, LogOut } from 'lucide-react';
 import { mockProviders, categories } from '../data/mockData';
 import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/UI/Card';
@@ -7,7 +7,7 @@ import Button from '../components/UI/Button';
 import StarRating from '../components/UI/StarRating';
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -39,9 +39,18 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" to="/location">
-              Change
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" to="/location">
+                Change
+              </Button>
+              <button
+                onClick={logout}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Search Bar */}
