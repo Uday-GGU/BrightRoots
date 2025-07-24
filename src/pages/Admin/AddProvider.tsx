@@ -12,7 +12,16 @@ const cities = [
 const areas = {
   'Gurgaon': ['Sector 15', 'Sector 22', 'Phase 2', 'DLF City', 'Cyber City', 'Golf Course Road'],
   'Delhi': ['Connaught Place', 'Karol Bagh', 'Lajpat Nagar', 'Saket', 'Dwarka', 'Rohini'],
-  'Mumbai': ['Bandra', 'Andheri', 'Powai', 'Thane', 'Navi Mumbai', 'Borivali']
+  'Mumbai': ['Bandra', 'Andheri', 'Powai', 'Thane', 'Navi Mumbai', 'Borivali'],
+  'Bangalore': ['Koramangala', 'Indiranagar', 'Whitefield', 'Electronic City', 'HSR Layout', 'Marathahalli'],
+  'Hyderabad': ['Hitech City', 'Banjara Hills', 'Jubilee Hills', 'Kondapur', 'Gachibowli', 'Secunderabad'],
+  'Chennai': ['T Nagar', 'Anna Nagar', 'Velachery', 'Adyar', 'Tambaram', 'OMR'],
+  'Kolkata': ['Salt Lake', 'Park Street', 'Ballygunge', 'New Town', 'Howrah', 'Rajarhat'],
+  'Pune': ['Koregaon Park', 'Hinjewadi', 'Baner', 'Wakad', 'Kothrud', 'Viman Nagar'],
+  'Noida': ['Sector 62', 'Sector 18', 'Sector 137', 'Greater Noida', 'Sector 76', 'Sector 135'],
+  'Ahmedabad': ['Satellite', 'Vastrapur', 'Bopal', 'Prahlad Nagar', 'Maninagar', 'Navrangpura'],
+  'Jaipur': ['Malviya Nagar', 'Vaishali Nagar', 'C Scheme', 'Mansarovar', 'Jagatpura', 'Tonk Road'],
+  'Lucknow': ['Gomti Nagar', 'Hazratganj', 'Aliganj', 'Indira Nagar', 'Mahanagar', 'Alambagh']
 };
 
 const serviceCategories = [
@@ -29,6 +38,8 @@ const serviceCategories = [
 export default function AddProvider() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locationMethod, setLocationMethod] = useState<'auto' | 'manual'>('manual');
+  const [isDetecting, setIsDetecting] = useState(false);
 
   const [formData, setFormData] = useState({
     businessName: '',
@@ -56,6 +67,43 @@ export default function AddProvider() {
         ? prev.categories.filter(id => id !== categoryId)
         : [...prev.categories, categoryId]
     }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!formData.businessName || !formData.ownerName || !formData.email || 
+        !formData.phone || !formData.city || !formData.area || 
+        formData.categories.length === 0) {
+      alert('Please fill all required fields and select at least one category');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Mock location detection
+      setTimeout(() => {
+        const mockLocation = {
+          city: 'Gurgaon',
+          area: 'Sector 15',
+          pincode: '122001'
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          city: mockLocation.city,
+          area: mockLocation.area,
+          pincode: mockLocation.pincode
+        }));
+        setIsDetecting(false);
+        alert('Location detected successfully!');
+      }, 2000);
+    } catch (error) {
+      setIsDetecting(false);
+      alert('Unable to detect location. Please enter manually.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -253,6 +301,63 @@ export default function AddProvider() {
               <h2 className="text-xl font-semibold text-gray-900">Location Information</h2>
             </div>
             
+            {/* Location Method Selection */}
+            <div className="mb-6">
+              <div className="flex items-center space-x-4 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setLocationMethod('auto')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                    locationMethod === 'auto'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <span>🌍</span>
+                  <span>Auto Detect</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocationMethod('manual')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                    locationMethod === 'manual'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <span>✏️</span>
+                  <span>Enter Manually</span>
+                </button>
+              </div>
+
+              {locationMethod === 'auto' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={handleAutoDetect}
+                      disabled={isDetecting}
+                      className={`px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all ${
+                        isDetecting ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {isDetecting ? (
+                        <>
+                          <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Detecting Location...
+                        </>
+                      ) : (
+                        'Detect Current Location'
+                      )}
+                    </button>
+                    <p className="text-sm text-blue-600 mt-2">
+                      Click to automatically fill location details
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -276,20 +381,41 @@ export default function AddProvider() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Area *
+                  Area * 
                 </label>
-                <select
-                  value={formData.area}
-                  onChange={(e) => handleInputChange('area', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                  disabled={!formData.city}
-                >
-                  <option value="">Select Area</option>
-                  {formData.city && areas[formData.city as keyof typeof areas]?.map(area => (
-                    <option key={area} value={area}>{area}</option>
-                  ))}
-                </select>
+                {formData.city && areas[formData.city as keyof typeof areas] ? (
+                  <div className="space-y-2">
+                    <select
+                      value={formData.area}
+                      onChange={(e) => handleInputChange('area', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select Area</option>
+                      {areas[formData.city as keyof typeof areas].map(area => (
+                        <option key={area} value={area}>{area}</option>
+                      ))}
+                    </select>
+                    <div className="text-center text-sm text-gray-500">or</div>
+                    <input
+                      type="text"
+                      value={formData.area}
+                      onChange={(e) => handleInputChange('area', e.target.value)}
+                      placeholder="Type area name manually"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    value={formData.area}
+                    onChange={(e) => handleInputChange('area', e.target.value)}
+                    placeholder={formData.city ? `Enter area in ${formData.city}` : "Select city first"}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    disabled={!formData.city}
+                  />
+                )}
               </div>
 
               <div>
