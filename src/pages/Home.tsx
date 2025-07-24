@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Heart, Filter, ChevronRight, LogOut } from 'lucide-react';
 import { categories } from '../data/mockData';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,9 +28,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    const loadProviders = async () => {
       setLoading(true);
       setError(null);
-  // Load providers from admin data
+      // Load providers from admin data
       try {
         const publishedProviders = await ProviderService.getPublishedProviders();
         console.log('📊 Published providers from Supabase:', publishedProviders);
@@ -119,7 +121,6 @@ export default function Home() {
     return () => {
       window.removeEventListener('providerDataSynced', handleDataSync);
       window.removeEventListener('providerDataChanged', handleProviderDataChanged);
-      dataSyncManager.stopPeriodicSync();
     };
   }, []);
 
@@ -130,7 +131,7 @@ export default function Home() {
     return matchesSearch && matchesCategory && provider.isVerified;
   });
 
-  const getDistanceText = (distance: number) => {
+  const getDistanceText = (distance) => {
     if (distance === 0) return 'Online';
     return `${distance} km away`;
   };
@@ -257,97 +258,97 @@ export default function Home() {
         {/* Provider Cards */}
         {!loading && !error && (
           <div className="space-y-4">
-          {filteredProviders.map(provider => (
-            <Card key={provider.id} hover className="p-4">
-              <div className="flex space-x-4">
-                {/* Provider Image */}
-                <div className="relative flex-shrink-0">
-                  <img
-                    src={provider.images[0]}
-                    alt={provider.name}
-                    className="w-20 h-20 rounded-xl object-cover"
-                  />
-                  {provider.isVerified && (
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Provider Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 truncate">
-                        {provider.name}
-                      </h4>
-                      <p className="text-sm text-gray-600 line-clamp-2 mt-1">
-                        {provider.description}
-                      </p>
-                    </div>
-                    <button className="ml-2 p-1">
-                      <Heart className="w-5 h-5 text-gray-400" />
-                    </button>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {provider.tags.slice(0, 3).map(tag => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Rating and Distance */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center space-x-1">
-                        <StarRating rating={provider.averageRating || 0} size="sm" />
-                        <span className="text-sm font-medium text-gray-900">
-                          {provider.averageRating}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          ({provider.totalReviews})
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {getDistanceText(provider.distance || 0)}
-                      </span>
-                    </div>
-                    
-                    {provider.priceRange && (
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">
-                          ₹{provider.priceRange.min}-{provider.priceRange.max}
-                        </p>
-                        <p className="text-xs text-gray-500">per session</p>
+            {filteredProviders.map(provider => (
+              <Card key={provider.id} hover className="p-4">
+                <div className="flex space-x-4">
+                  {/* Provider Image */}
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={provider.images[0]}
+                      alt={provider.name}
+                      className="w-20 h-20 rounded-xl object-cover"
+                    />
+                    {provider.isVerified && (
+                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
 
-              {/* Action Button */}
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <Button
-                  to={`/provider/${provider.id}`}
-                  variant="outline"
-                  className="w-full group"
-                >
-                  <span>View Details & Enquire</span>
-                  <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+                  {/* Provider Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 truncate">
+                          {provider.name}
+                        </h4>
+                        <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                          {provider.description}
+                        </p>
+                      </div>
+                      <button className="ml-2 p-1">
+                        <Heart className="w-5 h-5 text-gray-400" />
+                      </button>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {provider.tags.slice(0, 3).map(tag => (
+                        <span
+                          key={tag}
+                          className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Rating and Distance */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-1">
+                          <StarRating rating={provider.averageRating || 0} size="sm" />
+                          <span className="text-sm font-medium text-gray-900">
+                            {provider.averageRating}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            ({provider.totalReviews})
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {getDistanceText(provider.distance || 0)}
+                        </span>
+                      </div>
+                      
+                      {provider.priceRange && (
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">
+                            ₹{provider.priceRange.min}-{provider.priceRange.max}
+                          </p>
+                          <p className="text-xs text-gray-500">per session</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Button */}
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <Button
+                    to={`/provider/${provider.id}`}
+                    variant="outline"
+                    className="w-full group"
+                  >
+                    <span>View Details & Enquire</span>
+                    <ChevronRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
         )}
 
-        {filteredProviders.length === 0 && (
+        {filteredProviders.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <div className="text-gray-500 mb-4">
               <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
