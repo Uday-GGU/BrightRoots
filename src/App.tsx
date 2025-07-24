@@ -58,6 +58,35 @@ function AppContent() {
   const { user } = useAuth();
   const showBottomNav = user && user.role === 'parent' && !['/login', '/location', '/'].includes(window.location.pathname);
 
+  // Handle automatic redirects based on user state
+  React.useEffect(() => {
+    if (!isLoading && user) {
+      const currentPath = window.location.pathname;
+      console.log('🎯 User loaded, checking redirect:', { user: user.role, currentPath });
+      
+      // Redirect providers to dashboard if they're on login page
+      if (user.role === 'provider' && currentPath === '/provider/login') {
+        console.log('🔄 Redirecting provider from login to dashboard');
+        window.location.href = '/provider/dashboard';
+        return;
+      }
+      
+      // Redirect parents to location setup if they don't have location
+      if (user.role === 'parent' && !user.location && currentPath === '/') {
+        console.log('🔄 Redirecting parent to location setup');
+        window.location.href = '/location';
+        return;
+      }
+      
+      // Redirect parents to home if they have location and are on root
+      if (user.role === 'parent' && user.location && currentPath === '/') {
+        console.log('🔄 Redirecting parent to home');
+        window.location.href = '/home';
+        return;
+      }
+    }
+  }, [user, isLoading]);
+
   React.useEffect(() => {
     console.log('🎯 App state update - Current user:', user);
     console.log('🌐 Current pathname:', window.location.pathname);

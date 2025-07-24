@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+       console.log('🔄 Auth state change:', event, session?.user?.id);
         if (session?.user) {
           setSupabaseUser(session.user);
           await loadUserProfile(session.user.id);
@@ -137,8 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         });
         console.log('✅ Provider user created successfully');
-        setIsLoading(false);
         console.log('🏁 Profile loading completed for provider');
+       setIsLoading(false);
         return;
       }
       

@@ -40,21 +40,11 @@ export default function ProviderLogin() {
       } else {
         console.log('🔑 Attempting provider login...');
         
-        // Add timeout for login
-        const loginPromise = login(email, password, 'provider');
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Login timeout')), 15000);
-        });
-        
-        await Promise.race([loginPromise, timeoutPromise]);
         await login(email, password, 'provider');
         console.log('✅ Provider login completed successfully');
         
-        // Wait a bit for auth context to process
-        setTimeout(() => {
-          setIsLoading(false);
-          console.log('🔄 Login loading state reset');
-        }, 2000);
+       // Don't set loading to false here - let the auth context handle navigation
+       console.log('🔄 Login completed, waiting for auth context to handle navigation');
       }
     } catch (error: any) {
       console.error('❌ Provider authentication error:', error);
