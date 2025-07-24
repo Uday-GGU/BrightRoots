@@ -317,4 +317,3 @@ export default function Home() {
     </div>
   );
 }
-      console.log('✅ Converted providers for display:', convertedProviders);
