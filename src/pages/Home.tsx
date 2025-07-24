@@ -25,103 +25,92 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [providers, setProviders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Load published providers from Supabase
+  // Load providers from admin data
   React.useEffect(() => {
-    const loadPublishedProviders = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('🔄 Loading published providers from Supabase...');
-        
-        // Get user location for filtering
-        const filters = {
-          city: user?.location?.city,
-          area: user?.location?.area,
-          search: searchTerm,
-          category: selectedCategory
-        };
-        
-        const publishedProviders = await ProviderService.getPublishedProviders(filters);
-        console.log('📊 Published providers from Supabase:', publishedProviders);
-        
-        // Convert Supabase provider format to display format
-        const convertedProviders = publishedProviders.map(provider => {
-          const services = provider.provider_services || [];
-          const classes = provider.provider_classes || [];
-          const media = provider.provider_media || [];
-          
-          // Get profile image or use default
-          const profileImage = media.find(m => m.media_type === 'profile_image')?.file_path ||
-                              'https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg';
-          
-          return {
-            id: provider.id,
-            name: provider.business_name,
-            description: provider.description || `Professional ${services.map(s => s.category).join(', ')} services`,
-            categories: services.map(s => s.category),
-            location: {
-              address: `${provider.area}, ${provider.city}`,
-              city: provider.city,
-              area: provider.area,
-              coordinates: { 
-                lat: provider.latitude || 28.4595, 
-                lng: provider.longitude || 77.0266 
-              }
-            },
-            contact: {
-              phone: provider.phone,
-              whatsapp: provider.whatsapp,
-              email: provider.email
-            },
-            classes: classes.map(cls => ({
-              id: cls.id,
-              name: cls.name,
-              description: `Professional ${cls.name} training`,
-              ageGroup: cls.age_group,
-              mode: cls.mode,
-              price: cls.price,
-              duration: cls.duration,
-              schedule: ['Mon 4-5 PM', 'Wed 4-5 PM', 'Sat 10-11 AM'], // Mock schedule
-              type: cls.mode,
+    // Initialize data sync
+    dataSyncManager.init();
+    
+    const loadProviders = () => {
+      console.log('🔄 Loading providers from localStorage...');
+      const adminProviders = dataSyncManager.getProviders();
+      console.log('📊 Raw admin providers:', adminProviders);
+      
+      // Convert admin provider format to display format
+      const convertedProviders = adminProviders
+        .filter(provider => provider.status === 'approved') // Only show approved providers
+        .filter(provider => {
+          console.log('🔍 Checking provider:', provider.businessName, 'Status:', provider.status);
+          return true;
+        })
+        .map(provider => ({
+          id: provider.id,
+          name: provider.businessName,
+          description: provider.description || `Professional ${provider.categories.join(', ')} services`,
+          categories: provider.categories,
+          location: {
+            address: `${provider.area}, ${provider.city}`,
+            city: provider.city,
+            area: provider.area,
+            coordinates: { lat: 28.4595, lng: 77.0266 } // Mock coordinates
+          },
+          contact: {
+            phone: provider.phone,
+            whatsapp: provider.whatsapp,
+            email: provider.email
+          },
+          classes: [
+            {
+              id: `${provider.id}-class-1`,
+              name: `${provider.categories[0]} Classes`,
+              description: `Professional ${provider.categories[0]} training`,
+              ageGroup: '6-16 years',
+              mode: 'offline',
+              price: 1500,
+              duration: '60 mins',
+              schedule: ['Mon 4-5 PM', 'Wed 4-5 PM', 'Sat 10-11 AM'],
+              type: 'offline',
               batchSize: 8,
               feeType: 'per_session'
-            })),
-            images: [profileImage],
-            isVerified: provider.is_verified,
-            averageRating: 4.5 + Math.random() * 0.5, // Mock rating
-            totalReviews: Math.floor(Math.random() * 50) + 10, // Mock reviews
-            distance: Math.floor(Math.random() * 10) + 1, // Mock distance
-            tags: ['verified', 'experienced'],
-            priceRange: classes.length > 0 ? {
-              min: Math.min(...classes.map(c => c.price)),
-              max: Math.max(...classes.map(c => c.price))
-            } : { min: 1200, max: 2000 },
-            createdAt: new Date(provider.created_at),
-            updatedAt: new Date(provider.updated_at),
-            status: provider.status
-          };
-        });
-        
-        console.log('✅ Converted providers:', convertedProviders);
-        setProviders(convertedProviders);
-        
-      } catch (error) {
-        console.error('❌ Error loading published providers:', error);
-        setError('Failed to load providers. Please try again.');
-        
-        // Fallback to empty array
-        setProviders([]);
-      } finally {
-        setLoading(false);
-      }
+            }
+          ],
+          images: ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg'], // Default image
+          isVerified: true,
+          averageRating: 4.5 + Math.random() * 0.5, // Random rating between 4.5-5.0
+          totalReviews: Math.floor(Math.random() * 50) + 10, // Random reviews 10-60
+          distance: Math.floor(Math.random() * 10) + 1, // Random distance 1-10 km
+          tags: ['verified', 'experienced'],
+          priceRange: { min: 1200, max: 2000 },
+          createdAt: new Date(provider.createdAt),
+          updatedAt: new Date(provider.createdAt),
+          status: 'approved'
+        }));
+      
+      setProviders(convertedProviders);
     };
 
-    loadPublishedProviders();
-  }, [user?.location, searchTerm, selectedCategory]);
+    loadProviders();
+    
+    // Listen for data sync events
+    const handleDataSync = (e) => {
+      console.log('🔄 Data synced, reloading providers...');
+      loadProviders();
+    };
+    
+    const handleProviderDataChanged = (e) => {
+      console.log('🔄 Provider data changed, reloading providers...');
+      loadProviders();
+    };
+    
+    window.addEventListener('providerDataSynced', handleDataSync);
+    window.addEventListener('providerDataChanged', handleProviderDataChanged);
+    
+    return () => {
+      window.removeEventListener('providerDataSynced', handleDataSync);
+      window.removeEventListener('providerDataChanged', handleProviderDataChanged);
+      dataSyncManager.stopPeriodicSync();
+    };
+  }, []);
 
   const filteredProviders = providers.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -229,8 +218,34 @@ export default function Home() {
           </span>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading providers...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <div className="text-red-500 mb-4">
+              <span className="text-4xl">⚠️</span>
+              <h3 className="text-xl font-medium mt-2">Error Loading Providers</h3>
+              <p className="text-red-400 mt-2">{error}</p>
+            </div>
+            <Button 
+              onClick={() => window.location.reload()}
+              variant="outline"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+
         {/* Provider Cards */}
-        <div className="space-y-4">
+        {!loading && !error && (
+          <div className="space-y-4">
           {filteredProviders.map(provider => (
             <Card key={provider.id} hover className="p-4">
               <div className="flex space-x-4">
@@ -321,14 +336,14 @@ export default function Home() {
         </div>
         )}
 
-        {!loading && !error && filteredProviders.length === 0 && (
+        {filteredProviders.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 mb-4">
               <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <h3 className="text-xl font-medium">No providers found</h3>
               <p className="text-gray-400 mt-2">
                 {providers.length === 0 
-                  ? "No published providers available in your area yet."
+                  ? "No providers have been added yet. Contact admin to add providers."
                   : "Try adjusting your search or browse different categories"
                 }
               </p>
