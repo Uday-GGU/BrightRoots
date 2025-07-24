@@ -10,6 +10,7 @@ import Enquiries from './pages/Enquiries';
 import ProviderLogin from './pages/ProviderLogin';
 import ProviderOnboarding from './pages/Provider/Onboarding';
 import ProviderDashboard from './pages/Provider/Dashboard';
+import DebugLogin from './pages/DebugLogin';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -79,6 +80,9 @@ function AppContent() {
         {/* Public Routes */}
         <Route path="/" element={!user ? <Login /> : <Navigate to="/home" />} />
         <Route path="/provider/login" element={!user ? <ProviderLogin /> : <Navigate to="/provider/dashboard" />} />
+        
+        {/* Debug Route - Remove in production */}
+        <Route path="/debug-login" element={<DebugLogin />} />
         
         {/* Location Setup */}
         <Route path="/location" element={
