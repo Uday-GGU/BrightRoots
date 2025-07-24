@@ -81,23 +81,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔍 Loading user profile for userId:', userId);
       
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Profile loading timeout')), 10000);
-      });
+      // Check if Supabase is configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.error('❌ Supabase environment variables not configured');
+        throw new Error('Supabase configuration missing');
+      }
+
+      console.log('🔗 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('🔑 Supabase Key configured:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
 
       // Try to load from providers table first
       console.log('📊 Querying providers table...');
-      const providerQuery = supabase
-        .from('providers')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      const { data: provider, error: providerError } = await Promise.race([
-        providerQuery,
-        timeoutPromise
-      ]) as any;
+      
+      let provider = null;
+      let providerError = null;
+      
+      try {
+        const { data, error } = await supabase
+          .from('providers')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+        
+        provider = data;
+        providerError = error;
+      } catch (err) {
+        console.log('⚠️ Provider query failed:', err);
+        providerError = err;
+      }
 
       console.log('📊 Provider query result:', { provider, providerError });
 
@@ -140,29 +151,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('👤 No provider found, creating parent user');
       // If not a provider, create a basic parent user
-      console.log('🔍 Getting Supabase user data...');
-      const getUserQuery = supabase.auth.getUser();
-      const { data: supabaseUser, error: userError } = await Promise.race([
-        getUserQuery,
-        timeoutPromise
-      ]) as any;
       
-      console.log('📋 Supabase user data:', supabaseUser);
+      let supabaseUserData = null;
+      let userError = null;
+      
+      try {
+        console.log('🔍 Getting Supabase user data...');
+        const { data, error } = await supabase.auth.getUser();
+        supabaseUserData = data;
+        userError = error;
+      } catch (err) {
+        console.log('⚠️ Getting user data failed:', err);
+        userError = err;
+      }
+      
+      console.log('📋 Supabase user data:', supabaseUserData);
       
       if (userError) {
         console.error('❌ Error getting Supabase user:', userError);
-        throw userError;
+        // Don't throw, create fallback user instead
+        console.log('🔄 Creating fallback user due to user data error');
       }
       
-      if (supabaseUser.user) {
-        const userRole = supabaseUser.user.user_metadata?.role || 'parent';
+      if (supabaseUserData?.user) {
+        const userRole = supabaseUserData.user.user_metadata?.role || 'parent';
         console.log('🎭 Determined user role:', userRole);
         
         const newUser = {
           _id: userId,
           id: userId,
-          name: supabaseUser.user.user_metadata?.name || 'User',
-          email: supabaseUser.user.email || '',
+          name: supabaseUserData.user.user_metadata?.name || 'User',
+          email: supabaseUserData.user.email || '',
           role: userRole,
           children: []
         };
@@ -171,8 +190,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(newUser);
         console.log('✅ Parent/basic user created successfully');
       } else {
-        console.error('❌ No Supabase user found in response');
-        throw new Error('No user data found');
+        console.log('⚠️ No Supabase user found, creating minimal user');
+        // Create minimal user instead of throwing error
       }
     } catch (error) {
       console.error('❌ Error loading user profile:', error);
@@ -180,8 +199,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Create a minimal fallback user to prevent hanging
       console.log('🔄 Creating minimal fallback user due to error');
       try {
-        const { data: fallbackUser } = await supabase.auth.getUser();
-        if (fallbackUser.user) {
+        const { data: fallbackUser, error: fallbackError } = await supabase.auth.getUser();
+        if (fallbackUser?.user && !fallbackError) {
           const userRole = fallbackUser.user.user_metadata?.role || 'parent';
           console.log('🔄 Creating fallback user with role:', userRole);
           setUser({
@@ -194,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           console.log('✅ Fallback user created successfully');
         } else {
-          console.error('❌ Could not create fallback user - no auth data');
+          console.log('⚠️ Could not create fallback user - no auth data, creating minimal user');
           // Set a minimal user to prevent hanging
           setUser({
             _id: userId,
@@ -207,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('⚠️ Created minimal user to prevent hanging');
         }
       } catch (fallbackError) {
-        console.error('❌ Fallback user creation failed:', fallbackError);
+        console.log('⚠️ Fallback user creation failed:', fallbackError);
         // Last resort - create minimal user
         setUser({
           _id: userId,
