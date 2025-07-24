@@ -109,6 +109,12 @@ export default function AdminDashboard() {
     );
     setProviders(updatedProviders);
     localStorage.setItem('adminProviders', JSON.stringify(updatedProviders));
+    
+    // Trigger storage event for other tabs/windows
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'adminProviders',
+      newValue: JSON.stringify(updatedProviders)
+    }));
   };
 
   const handleDeleteProvider = (providerId: string) => {

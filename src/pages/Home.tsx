@@ -84,6 +84,7 @@ export default function Home() {
     // Listen for storage changes to update providers when admin adds new ones
     const handleStorageChange = (e) => {
       if (e.key === 'adminProviders') {
+        console.log('🔄 Storage changed, reloading providers...');
         loadProviders();
       }
     };
@@ -295,7 +296,10 @@ export default function Home() {
               <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <h3 className="text-xl font-medium">No providers found</h3>
               <p className="text-gray-400 mt-2">
-                Try adjusting your search or browse different categories
+                {providers.length === 0 
+                  ? "No providers have been added yet. Contact admin to add providers."
+                  : "Try adjusting your search or browse different categories"
+                }
               </p>
             </div>
             <Button 
@@ -313,3 +317,4 @@ export default function Home() {
     </div>
   );
 }
+      console.log('✅ Converted providers for display:', convertedProviders);
