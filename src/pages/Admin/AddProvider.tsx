@@ -83,43 +83,6 @@ export default function AddProvider() {
     setIsSubmitting(true);
 
     try {
-      // Mock location detection
-      setTimeout(() => {
-        const mockLocation = {
-          city: 'Gurgaon',
-          area: 'Sector 15',
-          pincode: '122001'
-        };
-        
-        setFormData(prev => ({
-          ...prev,
-          city: mockLocation.city,
-          area: mockLocation.area,
-          pincode: mockLocation.pincode
-        }));
-        setIsDetecting(false);
-        alert('Location detected successfully!');
-      }, 2000);
-    } catch (error) {
-      setIsDetecting(false);
-      alert('Unable to detect location. Please enter manually.');
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    if (!formData.businessName || !formData.ownerName || !formData.email || 
-        !formData.phone || !formData.city || !formData.area || 
-        formData.categories.length === 0) {
-      alert('Please fill all required fields and select at least one category');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
       // Get existing providers
       const existingProviders = JSON.parse(localStorage.getItem('adminProviders') || '[]');
       
