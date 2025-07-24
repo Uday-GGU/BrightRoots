@@ -31,6 +31,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setIsLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -108,7 +113,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string, role: 'parent' | 'provider' = 'parent') => {
     if (!isSupabaseConfigured) {
-      throw new Error('Supabase is not configured. Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+      // Mock successful login for demo purposes when Supabase is not configured
+      const mockUser: User = {
+        _id: 'demo-user-' + Date.now(),
+        name: 'Demo User',
+        email: email,
+        role: role,
+        children: role === 'parent' ? [
+          { name: 'Emma', age: 8, interests: ['music', 'art'] },
+          { name: 'Liam', age: 10, interests: ['coding', 'sports'] }
+        ] : undefined
+      };
+      setUser(mockUser);
+      return;
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -123,7 +140,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
     if (!isSupabaseConfigured) {
-      throw new Error('Supabase is not configured. Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+      // Mock successful signup for demo purposes when Supabase is not configured
+      const mockUser: User = {
+        _id: 'demo-user-' + Date.now(),
+        name: userData.name || 'Demo User',
+        email: email,
+        role: userData.role || 'parent',
+        children: userData.role === 'parent' ? [
+          { name: 'Emma', age: 8, interests: ['music', 'art'] },
+          { name: 'Liam', age: 10, interests: ['coding', 'sports'] }
+        ] : undefined
+      };
+      setUser(mockUser);
+      return;
     }
 
     const { data, error } = await supabase.auth.signUp({
@@ -145,7 +174,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithPhone = async (phone: string) => {
     if (!isSupabaseConfigured) {
-      throw new Error('Supabase is not configured. Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+      // Mock OTP sent for demo purposes when Supabase is not configured
+      return;
     }
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -162,7 +192,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyOtp = async (phone: string, otp: string) => {
     if (!isSupabaseConfigured) {
-      throw new Error('Supabase is not configured. Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+      // Mock successful OTP verification for demo purposes when Supabase is not configured
+      const mockUser: User = {
+        _id: 'demo-user-' + Date.now(),
+        name: 'Demo User',
+        email: '',
+        phone: phone,
+        role: 'parent',
+        children: [
+          { name: 'Emma', age: 8, interests: ['music', 'art'] },
+          { name: 'Liam', age: 10, interests: ['coding', 'sports'] }
+        ]
+      };
+      setUser(mockUser);
+      return;
     }
 
     const { data, error } = await supabase.auth.verifyOtp({

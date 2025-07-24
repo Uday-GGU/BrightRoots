@@ -48,9 +48,7 @@ export default function Login() {
       navigate('/location');
     } catch (error: any) {
       console.error('Login error:', error);
-      if (error.message.includes('Supabase is not configured')) {
-        alert('⚠️ Setup Required: Please create a .env file with your Supabase credentials:\n\nVITE_SUPABASE_URL=your_supabase_url\nVITE_SUPABASE_ANON_KEY=your_anon_key\n\nThen restart the development server.');
-      } else if (error.message.includes('Invalid login credentials')) {
+      if (error.message.includes('Invalid login credentials')) {
         alert('Invalid email or password. Please check your credentials or sign up if you don\'t have an account.');
       } else if (error.message.includes('Email not confirmed')) {
         alert('Please check your email and click the confirmation link before logging in.');
