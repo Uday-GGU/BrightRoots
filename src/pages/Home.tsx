@@ -1,18 +1,98 @@
 import React, { useState } from 'react';
 import { Search, MapPin, Star, Heart, Filter, ChevronRight, LogOut } from 'lucide-react';
-import { mockProviders, categories } from '../data/mockData';
+import { categories } from '../data/mockData';
 import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import StarRating from '../components/UI/StarRating';
+
+// Service categories mapping for display
+const categoryIcons = {
+  tuition: '📚',
+  music: '🎵',
+  dance: '💃',
+  sports: '⚽',
+  coding: '💻',
+  art: '🎨',
+  daycare: '🏠',
+  camps: '🏕️'
+};
 
 export default function Home() {
   const { user, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [providers, setProviders] = useState([]);
 
-  const filteredProviders = mockProviders.filter(provider => {
+  // Load providers from admin data
+  React.useEffect(() => {
+    const loadProviders = () => {
+      const adminProviders = JSON.parse(localStorage.getItem('adminProviders') || '[]');
+      
+      // Convert admin provider format to display format
+      const convertedProviders = adminProviders
+        .filter(provider => provider.status === 'approved') // Only show approved providers
+        .map(provider => ({
+          id: provider.id,
+          name: provider.businessName,
+          description: provider.description || `Professional ${provider.categories.join(', ')} services`,
+          categories: provider.categories,
+          location: {
+            address: `${provider.area}, ${provider.city}`,
+            city: provider.city,
+            area: provider.area,
+            coordinates: { lat: 28.4595, lng: 77.0266 } // Mock coordinates
+          },
+          contact: {
+            phone: provider.phone,
+            whatsapp: provider.whatsapp,
+            email: provider.email
+          },
+          classes: [
+            {
+              id: `${provider.id}-class-1`,
+              name: `${provider.categories[0]} Classes`,
+              description: `Professional ${provider.categories[0]} training`,
+              ageGroup: '6-16 years',
+              mode: 'offline',
+              price: 1500,
+              duration: '60 mins',
+              schedule: ['Mon 4-5 PM', 'Wed 4-5 PM', 'Sat 10-11 AM'],
+              type: 'offline',
+              batchSize: 8,
+              feeType: 'per_session'
+            }
+          ],
+          images: ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg'], // Default image
+          isVerified: true,
+          averageRating: 4.5 + Math.random() * 0.5, // Random rating between 4.5-5.0
+          totalReviews: Math.floor(Math.random() * 50) + 10, // Random reviews 10-60
+          distance: Math.floor(Math.random() * 10) + 1, // Random distance 1-10 km
+          tags: ['verified', 'experienced'],
+          priceRange: { min: 1200, max: 2000 },
+          createdAt: new Date(provider.createdAt),
+          updatedAt: new Date(provider.createdAt),
+          status: 'approved'
+        }));
+      
+      setProviders(convertedProviders);
+    };
+
+    loadProviders();
+    
+    // Listen for storage changes to update providers when admin adds new ones
+    const handleStorageChange = (e) => {
+      if (e.key === 'adminProviders') {
+        loadProviders();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const filteredProviders = providers.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          provider.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !selectedCategory || provider.categories.includes(selectedCategory);
