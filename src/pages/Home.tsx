@@ -25,68 +25,79 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [providers, setProviders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+      setLoading(true);
+      setError(null);
   // Load providers from admin data
-  React.useEffect(() => {
-    // Initialize data sync
-    dataSyncManager.init();
-    
-    const loadProviders = () => {
-      console.log('🔄 Loading providers from localStorage...');
-      const adminProviders = dataSyncManager.getProviders();
-      console.log('📊 Raw admin providers:', adminProviders);
-      
-      // Convert admin provider format to display format
-      const convertedProviders = adminProviders
-        .filter(provider => provider.status === 'approved') // Only show approved providers
-        .filter(provider => {
-          console.log('🔍 Checking provider:', provider.businessName, 'Status:', provider.status);
-          return true;
-        })
-        .map(provider => ({
+      try {
+        const publishedProviders = await ProviderService.getPublishedProviders();
+        console.log('📊 Published providers from Supabase:', publishedProviders);
+        
+        // Filter by user's location if available
+        let filteredProviders = publishedProviders;
+        if (user?.location?.city) {
+          filteredProviders = publishedProviders.filter(provider => 
+            provider.city?.toLowerCase() === user.location.city.toLowerCase()
+          );
+          console.log(`🏙️ Filtered providers for ${user.location.city}:`, filteredProviders);
+        }
+        
+        // Convert to display format
+        const convertedProviders = filteredProviders.map(provider => ({
           id: provider.id,
-          name: provider.businessName,
-          description: provider.description || `Professional ${provider.categories.join(', ')} services`,
-          categories: provider.categories,
+          name: provider.business_name,
+          description: provider.description || `Professional services in ${provider.city}`,
+          categories: provider.provider_services?.map(s => s.category) || [],
           location: {
             address: `${provider.area}, ${provider.city}`,
             city: provider.city,
             area: provider.area,
-            coordinates: { lat: 28.4595, lng: 77.0266 } // Mock coordinates
+            coordinates: { 
+              lat: provider.latitude || 28.4595, 
+              lng: provider.longitude || 77.0266 
+            }
           },
           contact: {
             phone: provider.phone,
             whatsapp: provider.whatsapp,
             email: provider.email
           },
-          classes: [
-            {
-              id: `${provider.id}-class-1`,
-              name: `${provider.categories[0]} Classes`,
-              description: `Professional ${provider.categories[0]} training`,
-              ageGroup: '6-16 years',
-              mode: 'offline',
-              price: 1500,
-              duration: '60 mins',
-              schedule: ['Mon 4-5 PM', 'Wed 4-5 PM', 'Sat 10-11 AM'],
-              type: 'offline',
-              batchSize: 8,
-              feeType: 'per_session'
-            }
-          ],
-          images: ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg'], // Default image
-          isVerified: true,
-          averageRating: 4.5 + Math.random() * 0.5, // Random rating between 4.5-5.0
-          totalReviews: Math.floor(Math.random() * 50) + 10, // Random reviews 10-60
-          distance: Math.floor(Math.random() * 10) + 1, // Random distance 1-10 km
-          tags: ['verified', 'experienced'],
+          classes: provider.provider_classes?.map(cls => ({
+            id: cls.id,
+            name: cls.name,
+            description: cls.description,
+            ageGroup: cls.age_group,
+            mode: cls.mode,
+            price: cls.price,
+            duration: cls.duration,
+            schedule: cls.schedule || [],
+            type: cls.mode,
+            batchSize: cls.batch_size,
+            feeType: cls.fee_type
+          })) || [],
+          images: provider.provider_media?.filter(m => m.media_type === 'profile_image').map(m => m.file_path) || 
+                  ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg'],
+          isVerified: provider.is_verified,
+          averageRating: 4.5 + Math.random() * 0.5,
+          totalReviews: Math.floor(Math.random() * 50) + 10,
+          distance: Math.floor(Math.random() * 10) + 1,
+          tags: provider.is_verified ? ['verified', 'experienced'] : ['experienced'],
           priceRange: { min: 1200, max: 2000 },
-          createdAt: new Date(provider.createdAt),
-          updatedAt: new Date(provider.createdAt),
-          status: 'approved'
+          createdAt: new Date(provider.created_at),
+          updatedAt: new Date(provider.updated_at),
+          status: provider.status
         }));
-      
-      setProviders(convertedProviders);
+        
+        console.log('✅ Converted providers for display:', convertedProviders);
+        setProviders(convertedProviders);
+      } catch (err) {
+        console.error('❌ Error loading providers:', err);
+        setError(err.message || 'Failed to load providers');
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadProviders();
