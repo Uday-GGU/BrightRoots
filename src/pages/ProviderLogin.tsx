@@ -39,14 +39,30 @@ export default function ProviderLogin() {
         setIsLoading(false);
       } else {
         console.log('🔑 Attempting provider login...');
+        
+        // Add timeout for login
+        const loginPromise = login(email, password, 'provider');
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Login timeout')), 15000);
+        });
+        
+        await Promise.race([loginPromise, timeoutPromise]);
         await login(email, password, 'provider');
         console.log('✅ Provider login completed successfully');
-        // Don't set loading false here - let AuthContext handle it
+        
+        // Wait a bit for auth context to process
+        setTimeout(() => {
+          setIsLoading(false);
+          console.log('🔄 Login loading state reset');
+        }, 2000);
       }
     } catch (error: any) {
       console.error('❌ Provider authentication error:', error);
       setIsLoading(false);
-      if (error.message.includes('Invalid login credentials')) {
+      
+      if (error.message === 'Login timeout') {
+        alert('Login is taking too long. Please check your internet connection and try again.');
+      } else if (error.message.includes('Invalid login credentials')) {
         alert('Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {
         alert('Please check your email and click the confirmation link before logging in.');
