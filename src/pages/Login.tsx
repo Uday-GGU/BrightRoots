@@ -35,14 +35,26 @@ export default function Login() {
           alert('Please enter your email address');
           return;
         }
-        // For development, use a default password
-        await login(identifier, 'password123', 'parent');
+        // For email login, we need a password - you might want to implement password reset
+        // For now, let's assume users have passwords or implement magic link
+        const password = prompt('Please enter your password:');
+        if (!password) {
+          alert('Password is required');
+          return;
+        }
+        await login(identifier, password, 'parent');
       }
       
       navigate('/location');
     } catch (error: any) {
       console.error('Login error:', error);
-      alert(error.message || 'Login failed. Please try again.');
+      if (error.message.includes('Invalid login credentials')) {
+        alert('Invalid email or password. Please check your credentials or sign up if you don\'t have an account.');
+      } else if (error.message.includes('Email not confirmed')) {
+        alert('Please check your email and click the confirmation link before logging in.');
+      } else {
+        alert(error.message || 'Login failed. Please try again.');
+      }
     }
   };
 

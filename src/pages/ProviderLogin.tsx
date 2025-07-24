@@ -31,13 +31,21 @@ export default function ProviderLogin() {
     try {
       if (isSignup) {
         await signUp(email, password, { name, role: 'provider' });
-        alert('Account created! Please check your email to verify your account.');
+        alert('Account created! Please check your email to verify your account before logging in.');
       } else {
         await login(email, password, 'provider');
         navigate('/provider/onboarding');
       }
     } catch (error: any) {
-      alert(error.message || 'Authentication failed');
+      if (error.message.includes('Invalid login credentials')) {
+        alert('Invalid email or password. Please check your credentials.');
+      } else if (error.message.includes('Email not confirmed')) {
+        alert('Please check your email and click the confirmation link before logging in.');
+      } else if (error.message.includes('User already registered')) {
+        alert('An account with this email already exists. Please login instead.');
+      } else {
+        alert(error.message || 'Authentication failed');
+      }
     } finally {
       setIsLoading(false);
     }

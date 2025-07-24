@@ -107,100 +107,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string, role: 'parent' | 'provider' = 'parent') => {
-    // Always use mock authentication for development
-    console.log('Using mock authentication for development');
-    
-    // Create mock user
-    const mockUser = {
-      _id: 'mock-user-id',
-      name: email.split('@')[0],
-      email: email,
-      role: role,
-      phone: role === 'provider' ? '+91 98765 43210' : undefined,
-      businessName: role === 'provider' ? 'Mock Business' : undefined,
-      isVerified: role === 'provider' ? false : undefined,
-      location: role === 'parent' ? undefined : {
-        city: 'Gurgaon',
-        area: 'Sector 15',
-        pincode: '122001'
-      },
-      children: role === 'parent' ? [
-        { name: 'Child 1', age: 8, interests: ['music'] },
-        { name: 'Child 2', age: 12, interests: ['sports'] }
-      ] : undefined
-    };
-    
-    setUser(mockUser);
-    setSupabaseUser({
-      id: 'mock-user-id',
-      email: email,
-      user_metadata: { name: mockUser.name, role: role }
-    } as any);
-    
-    return;
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) throw error;
+
+    // The user profile will be loaded automatically via the auth state change listener
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
-    // Always use mock sign up for development
-    console.log('Using mock sign up for development');
-    
-    // Simulate successful signup
-    const mockUser = {
-      _id: 'mock-user-id',
-      name: userData.name || email.split('@')[0],
-      email: email,
-      role: userData.role || 'parent',
-      phone: userData.role === 'provider' ? '+91 98765 43210' : undefined,
-      businessName: userData.role === 'provider' ? 'New Business' : undefined,
-      isVerified: false,
-      children: userData.role === 'parent' ? [] : undefined
-    };
-    
-    setUser(mockUser);
-    setSupabaseUser({
-      id: 'mock-user-id',
-      email: email,
-      user_metadata: { name: mockUser.name, role: userData.role }
-    } as any);
-    
-    return;
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: userData.name,
+          role: userData.role || 'parent'
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    // For providers, we'll create the provider record during onboarding
+    // For parents, the user profile will be created automatically
   };
 
   const signInWithPhone = async (phone: string) => {
-    // Always use mock phone authentication for development
-    console.log('Mock OTP sent to:', phone);
-    return;
+    const { error } = await supabase.auth.signInWithOtp({
+      phone,
+      options: {
+        data: {
+          role: 'parent'
+        }
+      }
+    });
+
+    if (error) throw error;
   };
 
   const verifyOtp = async (phone: string, otp: string) => {
-    // Always use mock OTP verification for development
-    console.log('Mock OTP verification for:', phone, 'with OTP:', otp);
-    
-    // Accept any 6-digit OTP for development
-    if (otp.length === 6) {
-      const mockUser = {
-        _id: 'mock-user-id',
-        name: 'Parent User',
-        email: '',
-        phone: phone,
-        role: 'parent' as const,
-        children: [
-          { name: 'Child 1', age: 8, interests: ['music'] },
-          { name: 'Child 2', age: 12, interests: ['sports'] }
-        ]
-      };
-      
-      setUser(mockUser);
-      setSupabaseUser({
-        id: 'mock-user-id',
-        phone: phone,
-        user_metadata: { name: mockUser.name, role: 'parent' }
-      } as any);
-      
-      return;
-    } else {
-      throw new Error('Invalid OTP. Please enter a 6-digit code.');
-    }
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone,
+      token: otp,
+      type: 'sms'
+    });
+
+    if (error) throw error;
+
+    // The user profile will be loaded automatically via the auth state change listener
   };
 
   const setUserLocation = (location: User['location']) => {
