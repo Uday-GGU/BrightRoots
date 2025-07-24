@@ -289,6 +289,12 @@ export default function Login() {
               Are you an educator? Join as Provider
             </Button>
           </div>
+          
+          <div className="mt-2 text-center">
+            <Button to="/admin/login" variant="outline" size="sm">
+              Admin Portal
+            </Button>
+          </div>
         </div>
       </div>
     </div>

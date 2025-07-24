@@ -11,6 +11,9 @@ import ProviderLogin from './pages/ProviderLogin';
 import ProviderOnboarding from './pages/Provider/Onboarding';
 import ProviderDashboard from './pages/Provider/Dashboard';
 import DebugLogin from './pages/DebugLogin';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/Admin/Dashboard';
+import AddProvider from './pages/Admin/AddProvider';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -49,6 +52,16 @@ function ProviderRoute({ children }: { children: React.ReactNode }) {
 
   if (!user || user.role !== 'provider') {
     return <Navigate to="/provider/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const adminAuth = localStorage.getItem('adminAuth');
+  
+  if (!adminAuth) {
+    return <Navigate to="/admin/login" replace />;
   }
 
   return <>{children}</>;
@@ -109,6 +122,19 @@ function AppContent() {
         {/* Public Routes */}
         <Route path="/" element={!user ? <Login /> : <Navigate to="/home" />} />
         <Route path="/provider/login" element={!user ? <ProviderLogin /> : <Navigate to="/provider/dashboard" />} />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
+        <Route path="/admin/add-provider" element={
+          <AdminRoute>
+            <AddProvider />
+          </AdminRoute>
+        } />
         
         {/* Debug Route - Remove in production */}
         <Route path="/debug-login" element={<DebugLogin />} />
