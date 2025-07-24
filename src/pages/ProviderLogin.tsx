@@ -41,7 +41,7 @@ export default function ProviderLogin() {
         console.log('🔑 Attempting provider login...');
         await login(email, password, 'provider');
         console.log('✅ Provider login completed successfully');
-        setIsLoading(false);
+        // Don't set loading false here - let AuthContext handle it
       }
     } catch (error: any) {
       console.error('❌ Provider authentication error:', error);

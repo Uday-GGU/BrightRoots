@@ -61,6 +61,16 @@ function AppContent() {
     console.log('🎯 App state update - Current user:', user);
     console.log('🌐 Current pathname:', window.location.pathname);
     console.log('📱 Show bottom nav:', showBottomNav);
+    
+    // Debug navigation logic
+    if (user) {
+      console.log('👤 User found with role:', user.role);
+      if (user.role === 'provider') {
+        console.log('🏢 Provider user - should redirect to dashboard or onboarding');
+      } else {
+        console.log('👨‍👩‍👧‍👦 Parent user - should redirect to location or home');
+      }
+    }
   }, [user]);
 
   return (

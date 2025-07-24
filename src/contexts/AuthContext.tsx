@@ -90,11 +90,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       console.log('📊 Provider query result:', { provider, providerError });
 
-      // Check if provider exists (ignore PGRST116 error which means no rows found)
-      if (provider && !providerError) {
+      // Check if provider exists and no error (ignore PGRST116 which means no rows found)
+      if (provider && (!providerError || providerError.code === 'PGRST116')) {
         console.log('✅ Provider found, creating provider user:', provider);
         setUser({
           _id: userId,
+          id: userId,
           name: provider.owner_name,
           email: provider.email,
           phone: provider.phone,
@@ -114,15 +115,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         });
         console.log('✅ Provider user created successfully');
+        setIsLoading(false);
         return;
       }
       
-      // If PGRST116 error or no provider found, continue to create parent user
-      if (providerError && providerError.code !== 'PGRST116') {
-        console.error('❌ Unexpected provider query error:', providerError);
-        throw providerError;
-      }
-
       console.log('👤 No provider found, creating parent user');
       // If not a provider, create a basic parent user
       const { data: supabaseUser } = await supabase.auth.getUser();
@@ -134,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         setUser({
           _id: userId,
+          id: userId,
           name: supabaseUser.user.user_metadata?.name || 'User',
           email: supabaseUser.user.email || '',
           role: userRole,
@@ -150,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('🔄 Creating fallback user with role:', userRole);
         setUser({
           _id: userId,
+          id: userId,
           name: supabaseUser.user.user_metadata?.name || 'User',
           email: supabaseUser.user.email || '',
           role: userRole,
