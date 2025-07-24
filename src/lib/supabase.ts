@@ -4,30 +4,15 @@ import { Database } from '../types/database';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Validate URL format
-const isValidUrl = (url: string) => {
-  try {
-    new URL(url);
-    return url.includes('supabase.co') && !url.includes('placeholder');
-  } catch {
-    return false;
-  }
-};
-
-// Use valid URL or fallback to prevent crash
-const validUrl = isValidUrl(supabaseUrl) ? supabaseUrl : 'https://demo.supabase.co';
-const validKey = supabaseAnonKey && supabaseAnonKey !== 'placeholder-key' ? supabaseAnonKey : 'demo-key';
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+}
 
 export const supabase = createClient<Database>(
-  validUrl,
-  validKey
+  supabaseUrl,
+  supabaseAnonKey
 );
 
-// Check if we're using placeholder values
-export const isSupabaseConfigured = isValidUrl(supabaseUrl) && 
-  supabaseAnonKey && 
-  supabaseAnonKey !== 'placeholder-key' && 
-  supabaseAnonKey !== 'demo-key';
 
 // Helper functions for common operations
 export const uploadFile = async (

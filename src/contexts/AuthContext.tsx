@@ -31,18 +31,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setIsLoading(false);
-      return;
-    }
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setSupabaseUser(session.user);
         loadUserProfile(session.user.id);
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     // Listen for auth changes
@@ -58,11 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     );
-
     return () => subscription.unsubscribe();
   }, []);
 
   const loadUserProfile = async (userId: string) => {
+    setIsLoading(true);
     try {
       // Try to load from providers table first
       const { data: provider } = await supabase
@@ -108,53 +104,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
+      // Create a basic user if profile loading fails
+      const { data: supabaseUser } = await supabase.auth.getUser();
+      if (supabaseUser.user) {
+        setUser({
+          _id: userId,
+          name: supabaseUser.user.user_metadata?.name || 'User',
+          email: supabaseUser.user.email || '',
+          role: 'parent',
+          children: []
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const login = async (email: string, password: string, role: 'parent' | 'provider' = 'parent') => {
-    if (!isSupabaseConfigured) {
-      // Mock successful login for demo purposes when Supabase is not configured
-      const mockUser: User = {
-        _id: 'demo-user-' + Date.now(),
-        name: 'Demo User',
-        email: email,
-        role: role,
-        children: role === 'parent' ? [
-          { name: 'Emma', age: 8, interests: ['music', 'art'] },
-          { name: 'Liam', age: 10, interests: ['coding', 'sports'] }
-        ] : undefined
-      };
-      setUser(mockUser);
-      return;
-    }
-
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) throw error;
-
-    // The user profile will be loaded automatically via the auth state change listener
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
-    if (!isSupabaseConfigured) {
-      // Mock successful signup for demo purposes when Supabase is not configured
-      const mockUser: User = {
-        _id: 'demo-user-' + Date.now(),
-        name: userData.name || 'Demo User',
-        email: email,
-        role: userData.role || 'parent',
-        children: userData.role === 'parent' ? [
-          { name: 'Emma', age: 8, interests: ['music', 'art'] },
-          { name: 'Liam', age: 10, interests: ['coding', 'sports'] }
-        ] : undefined
-      };
-      setUser(mockUser);
-      return;
-    }
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -167,17 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) throw error;
-
-    // For providers, we'll create the provider record during onboarding
-    // For parents, the user profile will be created automatically
   };
 
   const signInWithPhone = async (phone: string) => {
-    if (!isSupabaseConfigured) {
-      // Mock OTP sent for demo purposes when Supabase is not configured
-      return;
-    }
-
     const { error } = await supabase.auth.signInWithOtp({
       phone,
       options: {
@@ -191,23 +158,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const verifyOtp = async (phone: string, otp: string) => {
-    if (!isSupabaseConfigured) {
-      // Mock successful OTP verification for demo purposes when Supabase is not configured
-      const mockUser: User = {
-        _id: 'demo-user-' + Date.now(),
-        name: 'Demo User',
-        email: '',
-        phone: phone,
-        role: 'parent',
-        children: [
-          { name: 'Emma', age: 8, interests: ['music', 'art'] },
-          { name: 'Liam', age: 10, interests: ['coding', 'sports'] }
-        ]
-      };
-      setUser(mockUser);
-      return;
-    }
-
     const { data, error } = await supabase.auth.verifyOtp({
       phone,
       token: otp,
@@ -215,8 +165,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) throw error;
-
-    // The user profile will be loaded automatically via the auth state change listener
   };
 
   const setUserLocation = (location: User['location']) => {
