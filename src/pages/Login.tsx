@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Mail, Phone, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import Button from '../components/UI/Button';
 
 export default function Login() {
@@ -35,17 +36,27 @@ export default function Login() {
           alert('Please enter your email address');
           return;
         }
-        // For email login, we need a password - you might want to implement password reset
-        // For now, let's assume users have passwords or implement magic link
-        const password = prompt('Please enter your password:');
-        if (!password) {
           alert('Password is required');
           return;
         }
-        await login(identifier, password, 'parent');
+        // Send magic link for email authentication
+        const { error } = await supabase.auth.signInWithOtp({
+          email: identifier,
+          options: {
+            emailRedirectTo: `${window.location.origin}/home`
+          }
+        });
+        
+        if (error) throw error;
+        
+        alert('Check your email for the login link!');
+        return;
       }
       
-      navigate('/location');
+      // Only navigate for phone OTP verification
+      if (method === 'phone') {
+        navigate('/location');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       if (error.message.includes('Invalid login credentials')) {

@@ -31,6 +31,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Handle email confirmation redirects
+    const handleAuthRedirect = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (data.session && window.location.hash.includes('access_token')) {
+        // User just confirmed email, redirect appropriately
+        const user = data.session.user;
+        const isProvider = user.user_metadata?.role === 'provider';
+        
+        if (isProvider) {
+          window.location.href = '/provider/onboarding';
+        } else {
+          window.location.href = '/location';
+        }
+        return;
+      }
+    };
+
+    handleAuthRedirect();
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -140,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/`,
         data: {
           name: userData.name,
           role: userData.role || 'parent'
