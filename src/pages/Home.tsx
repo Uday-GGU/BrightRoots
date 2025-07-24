@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import StarRating from '../components/UI/StarRating';
+import { dataSyncManager } from '../utils/dataSync';
 
 // Service categories mapping for display
 const categoryIcons = {
@@ -27,9 +28,12 @@ export default function Home() {
 
   // Load providers from admin data
   React.useEffect(() => {
+    // Initialize data sync
+    dataSyncManager.init();
+    
     const loadProviders = () => {
       console.log('🔄 Loading providers from localStorage...');
-      const adminProviders = JSON.parse(localStorage.getItem('adminProviders') || '[]');
+      const adminProviders = dataSyncManager.getProviders();
       console.log('📊 Raw admin providers:', adminProviders);
       
       // Convert admin provider format to display format
@@ -87,33 +91,24 @@ export default function Home() {
 
     loadProviders();
     
-    // Listen for storage changes and manual refresh events
-    const handleStorageChange = (e) => {
-      if (e.key === 'adminProviders') {
-        console.log('🔄 Storage changed, reloading providers...');
-        loadProviders();
-      }
-    };
-    
-    // Listen for custom refresh events (for cross-system sync)
-    const handleCustomRefresh = () => {
-      console.log('🔄 Custom refresh triggered, reloading providers...');
+    // Listen for data sync events
+    const handleDataSync = (e) => {
+      console.log('🔄 Data synced, reloading providers...');
       loadProviders();
     };
     
-    // Add interval to periodically check for updates (every 5 seconds)
-    const syncInterval = setInterval(() => {
-      console.log('⏰ Periodic sync check...');
+    const handleProviderDataChanged = (e) => {
+      console.log('🔄 Provider data changed, reloading providers...');
       loadProviders();
-    }, 5000);
+    };
     
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('providerDataChanged', handleCustomRefresh);
+    window.addEventListener('providerDataSynced', handleDataSync);
+    window.addEventListener('providerDataChanged', handleProviderDataChanged);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('providerDataChanged', handleCustomRefresh);
-      clearInterval(syncInterval);
+      window.removeEventListener('providerDataSynced', handleDataSync);
+      window.removeEventListener('providerDataChanged', handleProviderDataChanged);
+      dataSyncManager.stopPeriodicSync();
     };
   }, []);
 

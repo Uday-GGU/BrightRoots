@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
+import { dataSyncManager } from '../../utils/dataSync';
 
 interface Provider {
   id: string;
@@ -42,6 +43,9 @@ export default function AdminDashboard() {
       navigate('/admin/login');
       return;
     }
+
+    // Initialize data sync
+    dataSyncManager.init();
 
     // Load demo providers
     loadDemoProviders();
@@ -87,13 +91,13 @@ export default function AdminDashboard() {
       }
     ];
 
-    // Load from localStorage or use demo data
-    const savedProviders = localStorage.getItem('adminProviders');
-    if (savedProviders) {
-      setProviders(JSON.parse(savedProviders));
+    // Load from data sync manager or use demo data
+    const savedProviders = dataSyncManager.getProviders();
+    if (savedProviders.length > 0) {
+      setProviders(savedProviders);
     } else {
       setProviders(demoProviders);
-      localStorage.setItem('adminProviders', JSON.stringify(demoProviders));
+      dataSyncManager.saveProviders(demoProviders);
     }
   };
 
@@ -104,31 +108,21 @@ export default function AdminDashboard() {
   };
 
   const handleStatusChange = (providerId: string, newStatus: 'approved' | 'rejected') => {
+    // Update through data sync manager
+    dataSyncManager.updateProviderStatus(providerId, newStatus);
+    
+    // Update local state
     const updatedProviders = providers.map(provider =>
       provider.id === providerId ? { ...provider, status: newStatus } : provider
     );
     setProviders(updatedProviders);
-    localStorage.setItem('adminProviders', JSON.stringify(updatedProviders));
-    
-    // Trigger multiple sync mechanisms
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'adminProviders',
-      newValue: JSON.stringify(updatedProviders)
-    }));
-    
-    // Trigger custom event for cross-system sync
-    window.dispatchEvent(new CustomEvent('providerDataChanged', {
-      detail: { action: 'statusChange', providerId, newStatus }
-    }));
-    
-    console.log('📢 Provider status changed:', providerId, 'to', newStatus);
   };
 
   const handleDeleteProvider = (providerId: string) => {
     if (confirm('Are you sure you want to delete this provider?')) {
       const updatedProviders = providers.filter(provider => provider.id !== providerId);
       setProviders(updatedProviders);
-      localStorage.setItem('adminProviders', JSON.stringify(updatedProviders));
+      dataSyncManager.saveProviders(updatedProviders);
     }
   };
 
