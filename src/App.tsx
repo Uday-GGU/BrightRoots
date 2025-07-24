@@ -55,7 +55,7 @@ function ProviderRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppContent() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const showBottomNav = user && user.role === 'parent' && !['/login', '/location', '/'].includes(window.location.pathname);
 
   // Handle automatic redirects based on user state
