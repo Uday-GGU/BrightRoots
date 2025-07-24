@@ -79,7 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserProfile = async (userId: string) => {
     setIsLoading(true);
     try {
-      console.log('Loading user profile for:', userId);
+      console.log('🔍 Loading user profile for userId:', userId);
+      
       // Try to load from providers table first
       const { data: provider, error: providerError } = await supabase
         .from('providers')
@@ -87,9 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', userId)
         .single();
 
+      console.log('📊 Provider query result:', { provider, providerError });
+
       // Check if provider exists (ignore PGRST116 error which means no rows found)
       if (provider && !providerError) {
-        console.log('Provider found:', provider);
+        console.log('✅ Provider found, creating provider user:', provider);
         setUser({
           _id: userId,
           name: provider.owner_name,
@@ -110,34 +113,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } : undefined
           }
         });
+        console.log('✅ Provider user created successfully');
         return;
       }
       
       // If PGRST116 error or no provider found, continue to create parent user
       if (providerError && providerError.code !== 'PGRST116') {
-        console.error('Provider query error:', providerError);
+        console.error('❌ Unexpected provider query error:', providerError);
         throw providerError;
       }
 
-      console.log('No provider found, creating parent user');
+      console.log('👤 No provider found, creating parent user');
       // If not a provider, create a basic parent user
       const { data: supabaseUser } = await supabase.auth.getUser();
-      if (supabaseUser.user) {
-        setUser({
-          _id: userId,
-          name: supabaseUser.user.user_metadata?.name || 'User',
-          email: supabaseUser.user.email || '',
-          role: 'parent',
-          children: []
-        });
-      }
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      // Create a basic user if profile loading fails
-      const { data: supabaseUser } = await supabase.auth.getUser();
+      console.log('📋 Supabase user data:', supabaseUser);
+      
       if (supabaseUser.user) {
         const userRole = supabaseUser.user.user_metadata?.role || 'parent';
-        console.log('Creating fallback user with role:', userRole);
+        console.log('🎭 Determined user role:', userRole);
+        
         setUser({
           _id: userId,
           name: supabaseUser.user.user_metadata?.name || 'User',
@@ -145,19 +139,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: userRole,
           children: []
         });
+        console.log('✅ Parent/basic user created successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error loading user profile:', error);
+      // Create a basic user if profile loading fails
+      const { data: supabaseUser } = await supabase.auth.getUser();
+      if (supabaseUser.user) {
+        const userRole = supabaseUser.user.user_metadata?.role || 'parent';
+        console.log('🔄 Creating fallback user with role:', userRole);
+        setUser({
+          _id: userId,
+          name: supabaseUser.user.user_metadata?.name || 'User',
+          email: supabaseUser.user.email || '',
+          role: userRole,
+          children: []
+        });
+        console.log('✅ Fallback user created successfully');
       }
     } finally {
+      console.log('🏁 Profile loading completed, setting isLoading to false');
       setIsLoading(false);
     }
   };
 
   const login = async (email: string, password: string, role: 'parent' | 'provider' = 'parent') => {
+    console.log('🚀 Starting login process for:', email, 'with role:', role);
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Login error:', error);
+      throw error;
+    }
+    
+    console.log('✅ Login successful, auth data:', data);
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {

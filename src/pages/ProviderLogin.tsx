@@ -16,6 +16,8 @@ export default function ProviderLogin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔐 Provider login attempt:', { email, isSignup });
+    
     if (!email.trim() || !password.trim()) {
       alert('Please fill all required fields');
       return;
@@ -26,19 +28,23 @@ export default function ProviderLogin() {
       return;
     }
     
+    console.log('📝 Form validation passed, starting authentication...');
     setIsLoading(true);
     
     try {
       if (isSignup) {
+        console.log('📝 Attempting provider signup...');
         await signUp(email, password, { name, role: 'provider' });
         alert('Account created! Please check your email to verify your account before logging in.');
         setIsLoading(false);
       } else {
+        console.log('🔑 Attempting provider login...');
         await login(email, password, 'provider');
-        // Don't navigate here - let the auth context handle it
+        console.log('✅ Provider login completed successfully');
         setIsLoading(false);
       }
     } catch (error: any) {
+      console.error('❌ Provider authentication error:', error);
       setIsLoading(false);
       if (error.message.includes('Invalid login credentials')) {
         alert('Invalid email or password. Please check your credentials.');

@@ -57,10 +57,10 @@ function AppContent() {
   const { user } = useAuth();
   const showBottomNav = user && user.role === 'parent' && !['/login', '/location', '/'].includes(window.location.pathname);
 
-  // Debug logging
   React.useEffect(() => {
-    console.log('Current user:', user);
-    console.log('Current pathname:', window.location.pathname);
+    console.log('🎯 App state update - Current user:', user);
+    console.log('🌐 Current pathname:', window.location.pathname);
+    console.log('📱 Show bottom nav:', showBottomNav);
   }, [user]);
 
   return (
