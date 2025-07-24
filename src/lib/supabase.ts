@@ -4,11 +4,18 @@ import { Database } from '../types/database';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
-}
+// For development, provide fallback values to prevent app crash
+const defaultUrl = 'https://placeholder.supabase.co';
+const defaultKey = 'placeholder-key';
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(
+  supabaseUrl || defaultUrl, 
+  supabaseAnonKey || defaultKey
+);
+
+// Check if we're using placeholder values
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey && 
+  supabaseUrl !== defaultUrl && supabaseAnonKey !== defaultKey);
 
 // Helper functions for common operations
 export const uploadFile = async (

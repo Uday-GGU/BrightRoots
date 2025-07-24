@@ -37,12 +37,16 @@ export default function ProviderLogin() {
         navigate('/provider/onboarding');
       }
     } catch (error: any) {
-      if (error.message.includes('Invalid login credentials')) {
+      if (error.message.includes('Supabase is not configured')) {
+        alert('⚠️ Setup Required: Please create a .env file with your Supabase credentials:\n\nVITE_SUPABASE_URL=your_supabase_url\nVITE_SUPABASE_ANON_KEY=your_anon_key\n\nThen restart the development server.');
+      } else if (error.message.includes('Invalid login credentials')) {
         alert('Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {
         alert('Please check your email and click the confirmation link before logging in.');
       } else if (error.message.includes('User already registered')) {
         alert('An account with this email already exists. Please login instead.');
+      } else if (error.message.includes('Failed to fetch')) {
+        alert('Unable to connect to the server. Please check your internet connection and Supabase configuration.');
       } else {
         alert(error.message || 'Authentication failed');
       }

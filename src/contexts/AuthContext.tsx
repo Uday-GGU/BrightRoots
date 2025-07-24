@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { User } from '../types';
 
@@ -107,6 +107,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string, role: 'parent' | 'provider' = 'parent') => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase is not configured. Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -118,6 +122,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase is not configured. Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -136,6 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithPhone = async (phone: string) => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase is not configured. Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       phone,
       options: {
@@ -149,6 +161,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const verifyOtp = async (phone: string, otp: string) => {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase is not configured. Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+    }
+
     const { data, error } = await supabase.auth.verifyOtp({
       phone,
       token: otp,
