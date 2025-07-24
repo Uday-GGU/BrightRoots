@@ -57,6 +57,12 @@ function AppContent() {
   const { user } = useAuth();
   const showBottomNav = user && user.role === 'parent' && !['/login', '/location', '/'].includes(window.location.pathname);
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Current user:', user);
+    console.log('Current pathname:', window.location.pathname);
+  }, [user]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Routes>
@@ -101,6 +107,15 @@ function AppContent() {
           <ProviderRoute>
             <ProviderDashboard />
           </ProviderRoute>
+        } />
+        
+        {/* Catch-all for authenticated providers without profile */}
+        <Route path="/provider/*" element={
+          user?.role === 'provider' ? (
+            <Navigate to="/provider/onboarding" replace />
+          ) : (
+            <Navigate to="/provider/login" replace />
+          )
         } />
         
         {/* Placeholder routes */}

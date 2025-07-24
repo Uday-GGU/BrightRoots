@@ -79,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadUserProfile = async (userId: string) => {
     setIsLoading(true);
     try {
+      console.log('Loading user profile for:', userId);
       // Try to load from providers table first
       const { data: provider, error: providerError } = await supabase
         .from('providers')
@@ -88,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Check if provider exists (ignore PGRST116 error which means no rows found)
       if (provider && !providerError) {
+        console.log('Provider found:', provider);
         setUser({
           _id: userId,
           name: provider.owner_name,
@@ -113,9 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // If PGRST116 error or no provider found, continue to create parent user
       if (providerError && providerError.code !== 'PGRST116') {
+        console.error('Provider query error:', providerError);
         throw providerError;
       }
 
+      console.log('No provider found, creating parent user');
       // If not a provider, create a basic parent user
       const { data: supabaseUser } = await supabase.auth.getUser();
       if (supabaseUser.user) {
@@ -132,11 +136,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Create a basic user if profile loading fails
       const { data: supabaseUser } = await supabase.auth.getUser();
       if (supabaseUser.user) {
+        const userRole = supabaseUser.user.user_metadata?.role || 'parent';
+        console.log('Creating fallback user with role:', userRole);
         setUser({
           _id: userId,
           name: supabaseUser.user.user_metadata?.name || 'User',
           email: supabaseUser.user.email || '',
-          role: 'parent',
+          role: userRole,
           children: []
         });
       }

@@ -32,11 +32,14 @@ export default function ProviderLogin() {
       if (isSignup) {
         await signUp(email, password, { name, role: 'provider' });
         alert('Account created! Please check your email to verify your account before logging in.');
+        setIsLoading(false);
       } else {
         await login(email, password, 'provider');
-        navigate('/provider/onboarding');
+        // Don't navigate here - let the auth context handle it
+        setIsLoading(false);
       }
     } catch (error: any) {
+      setIsLoading(false);
       if (error.message.includes('Invalid login credentials')) {
         alert('Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {
@@ -48,8 +51,6 @@ export default function ProviderLogin() {
       } else {
         alert(error.message || 'Authentication failed');
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
