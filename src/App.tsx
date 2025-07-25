@@ -7,7 +7,6 @@ import LocationSetup from './pages/LocationSetup';
 import Home from './pages/Home';
 import ProviderDetails from './pages/ProviderDetails';
 import Enquiries from './pages/Enquiries';
-import ProviderLogin from './pages/ProviderLogin';
 import ProviderOnboarding from './pages/Provider/Onboarding';
 import ProviderDashboard from './pages/Provider/Dashboard';
 import DebugLogin from './pages/DebugLogin';
