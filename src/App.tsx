@@ -14,6 +14,8 @@ import DebugLogin from './pages/DebugLogin';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/Admin/Dashboard';
 import AddProvider from './pages/Admin/AddProvider';
+import ProviderSignup from './pages/Provider/Signup';
+import ProviderLogin from './pages/Provider/Login';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -122,6 +124,7 @@ function AppContent() {
         {/* Public Routes */}
         <Route path="/" element={!user ? <Login /> : <Navigate to="/home" />} />
         <Route path="/provider/login" element={!user ? <ProviderLogin /> : <Navigate to="/provider/dashboard" />} />
+        <Route path="/provider/signup" element={!user ? <ProviderSignup /> : <Navigate to="/provider/dashboard" />} />
         
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

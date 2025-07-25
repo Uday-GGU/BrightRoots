@@ -213,9 +213,16 @@ export default function ProviderLogin() {
         </div>
 
         <div className="mt-6 text-center">
-          <Button to="/" variant="outline">
+          <div className="space-y-2">
+            <div>
+              <Link to="/provider/signup" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                Don't have an account? Sign up here
+              </Link>
+            </div>
+            <Button to="/" variant="outline" size="sm">
             Looking for classes? Switch to Parent App
           </Button>
+          </div>
         </div>
       </div>
     </div>
