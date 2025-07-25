@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   // Sample providers data
   const sampleProviders = [
     {
-      user_id: crypto.randomUUID(),
+      user_id: null,
       business_name: 'Happy Minds Tuition Center',
       owner_name: 'Rajesh Kumar',
       email: 'happyminds@example.com',
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
       is_published: true
     },
     {
-      user_id: crypto.randomUUID(),
+      user_id: null,
       business_name: 'Tiny Talents Art School',
       owner_name: 'Priya Sharma',
       email: 'tinytalents@example.com',
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
       is_published: true
     },
     {
-      user_id: crypto.randomUUID(),
+      user_id: null,
       business_name: 'KickStart Football Club',
       owner_name: 'Amit Singh',
       email: 'kickstartfc@example.com',
