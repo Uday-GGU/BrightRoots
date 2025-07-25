@@ -119,37 +119,12 @@ export default function AdminDashboard() {
 
       console.log('🔄 Inserting sample provider data...');
 
-      // Check if sample user already exists
-      let authUser;
-      const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail('sample.provider@brightroots.com');
-      
-      if (getUserError && getUserError.message !== 'User not found') {
-        console.error('❌ Error checking existing user:', getUserError);
-        return;
-      }
-      
-      if (existingUser && existingUser.user) {
-        console.log('✅ Sample user already exists, using existing user');
-        authUser = { user: existingUser.user };
-      } else {
-        // Create a sample auth user
-        const { data: newAuthUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-          email: 'sample.provider@brightroots.com',
-          password: 'samplepassword123',
-          email_confirm: true
-        });
-
-        if (authError) {
-          console.error('❌ Error creating sample auth user:', authError);
-          return;
-        }
-        
-        authUser = newAuthUser;
-      }
+      // Use a consistent demo user ID for sample data
+      const demoUserId = 'demo-sample-user-id';
 
       // Create sample provider
       const sampleProvider = await ProviderService.createProvider({
-        user_id: authUser.user.id,
+        user_id: demoUserId,
         business_name: 'Bright Learning Center',
         owner_name: 'Priya Sharma',
         email: 'sample.provider@brightroots.com',
