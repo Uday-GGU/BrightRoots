@@ -14,17 +14,24 @@ type Enquiry = Database['public']['Tables']['enquiries']['Row'];
 export class ProviderService {
   // Provider CRUD operations
   static async createProvider(data: ProviderInsert): Promise<Provider> {
+    console.log('🔧 ProviderService.createProvider called with:', data);
+    
     const providerData = {
       ...data,
       is_published: data.status === 'approved' // Auto-publish if approved
     };
     
-    const { data: provider, error } = await supabaseAdmin
+    console.log('🔧 Inserting provider data:', providerData);
+    
+    // Use regular supabase client instead of admin for now
+    const { data: provider, error } = await supabase
       .from('providers')
       .insert(providerData)
       .select()
       .single();
 
+    console.log('🔧 Insert result:', { provider, error });
+    
     if (error) throw error;
     return provider;
   }
