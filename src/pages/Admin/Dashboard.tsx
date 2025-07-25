@@ -50,6 +50,9 @@ export default function AdminDashboard() {
 
     // Load providers from Supabase
     loadProviders();
+    
+    // Auto-insert sample data on first load
+    insertSampleDataIfNeeded();
   }, [navigate]);
 
   const loadProviders = async () => {
