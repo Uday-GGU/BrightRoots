@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Star, Heart, Filter, ChevronRight, LogOut } from 'lucide-react';
 import { categories, mockProviders } from '../data/mockData';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import StarRating from '../components/UI/StarRating';
@@ -19,6 +20,23 @@ const categoryIcons = {
   camps: '🏕️'
 };
 
+// 📏 Helper to calculate distance (Haversine formula)
+function getDistance(loc1, loc2) {
+  if (!loc1 || !loc2) return 0;
+  
+  const toRad = (val) => (val * Math.PI) / 180;
+  const R = 6371; // Earth's radius in km
+  const dLat = toRad(loc2.latitude - loc1.latitude);
+  const dLon = toRad(loc2.longitude - loc1.longitude);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(loc1.latitude)) *
+      Math.cos(toRad(loc2.latitude)) *
+      Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 export default function Home() {
   const { user, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,102 +45,189 @@ export default function Home() {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+
+  // 🌍 Get Current Location or use user's saved location
+  useEffect(() => {
+    if (user?.location?.coordinates) {
+      setUserLocation({
+        latitude: user.location.coordinates.lat,
+        longitude: user.location.coordinates.lng
+      });
+    } else {
+      // Try to get current location
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
+          });
+        },
+        () => {
+          // Fallback to default location (Gurgaon)
+          setUserLocation({ latitude: 28.4595, longitude: 77.0266 });
+        }
+      );
+    }
+  }, [user]);
 
   useEffect(() => {
-    const loadProviders = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Check if user is demo user
-        const isDemoUser = localStorage.getItem('demoUser');
-        
-        if (isDemoUser) {
-          console.log('👤 Demo user detected, using mock data');
-          // Use mock data for demo users
-          setProviders(mockProviders);
-        } else {
-          console.log('🔗 Regular user, fetching from Supabase');
-          // Fetch published providers from Supabase for real users
-          const publishedProviders = await ProviderService.getPublishedProviders();
-          console.log('📊 Published providers from Supabase:', publishedProviders);
-          
-          // Filter by user's location if available
-          let filteredProviders = publishedProviders;
-          if (user?.location?.city) {
-            filteredProviders = publishedProviders.filter(provider => 
-              provider.city?.toLowerCase() === user.location.city.toLowerCase()
-            );
-            console.log(`🏙️ Filtered providers for ${user.location.city}:`, filteredProviders);
-          }
-          
-          // Convert to display format
-          const convertedProviders = filteredProviders.map((provider, index) => ({
-            id: provider.id,
-            name: provider.business_name,
-            description: provider.description || `Professional services in ${provider.city}`,
-            categories: provider.provider_services?.map(s => s.category) || [],
-            location: {
-              address: `${provider.area}, ${provider.city}`,
-              city: provider.city,
-              area: provider.area,
-              coordinates: { 
-                lat: provider.latitude || 28.4595, 
-                lng: provider.longitude || 77.0266 
-              }
-            },
-            contact: {
-              phone: provider.phone,
-              whatsapp: provider.whatsapp,
-              email: provider.email
-            },
-            classes: provider.provider_classes?.map(cls => ({
-              id: cls.id,
-              name: cls.name,
-              description: cls.description,
-              ageGroup: cls.age_group,
-              mode: cls.mode,
-              price: cls.price,
-              duration: cls.duration,
-              schedule: cls.schedule || [],
-              type: cls.mode,
-              batchSize: cls.batch_size,
-              feeType: cls.fee_type
-            })) || [],
-            images: provider.provider_media?.filter(m => m.media_type === 'profile_image').map(m => m.file_path) || 
-                    ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg'],
-            isVerified: provider.is_verified,
-            averageRating: 4.5 + Math.random() * 0.5,
-            totalReviews: Math.floor(Math.random() * 50) + 10,
-            distance: provider.latitude && provider.longitude ? 
-              Math.floor(Math.random() * 10) + 1 : 0,
-            tags: provider.is_verified ? ['verified', 'experienced'] : ['experienced'],
-            priceRange: provider.provider_classes?.length > 0 ? {
-              min: Math.min(...provider.provider_classes.map(c => c.price)),
-              max: Math.max(...provider.provider_classes.map(c => c.price))
-            } : { min: 1200, max: 2000 },
-            createdAt: new Date(provider.created_at),
-            updatedAt: new Date(provider.updated_at),
-            status: provider.status
-          }));
-          
-          console.log('✅ Converted providers for display:', convertedProviders);
-          setProviders(convertedProviders);
-        }
-      } catch (err) {
-        console.error('❌ Error loading providers:', err);
-        setError(err.message || 'Failed to load providers');
-        
-        // Fallback to mock data on error
-        console.log('🔄 Falling back to mock data due to error');
-        setProviders(mockProviders);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (userLocation) {
+      loadProviders();
+    }
+  }, [userLocation, selectedCategory, user]);
 
-    loadProviders();
-  }, [user?.location, user]);
+  const loadProviders = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Check if user is demo user
+      const isDemoUser = localStorage.getItem('demoUser');
+      
+      if (isDemoUser) {
+        console.log('👤 Demo user detected, using mock data');
+        // Use mock data for demo users and sort by distance
+        let sortedProviders = [...mockProviders];
+        
+        if (userLocation) {
+          sortedProviders = mockProviders
+            .map(provider => ({
+              ...provider,
+              calculatedDistance: getDistance(userLocation, provider.location.coordinates)
+            }))
+            .sort((a, b) => a.calculatedDistance - b.calculatedDistance)
+            .map(({ calculatedDistance, ...provider }) => ({
+              ...provider,
+              distance: Math.round(calculatedDistance * 10) / 10 // Round to 1 decimal
+            }));
+        }
+        
+        setProviders(sortedProviders);
+      } else {
+        console.log('🔗 Regular user, fetching from Supabase');
+        // Fetch published providers from Supabase for real users
+        let query = supabase
+          .from('providers')
+          .select(`
+            *,
+            provider_services(category),
+            provider_classes(id, name, price, mode, age_group, duration),
+            provider_media(file_path, media_type)
+          `)
+          .eq('is_published', true)
+          .eq('status', 'approved');
+
+        // Filter by category if selected
+        if (selectedCategory) {
+          query = query.eq('provider_services.category', selectedCategory);
+        }
+
+        // Filter by user's location if available
+        if (user?.location?.city) {
+          query = query.eq('city', user.location.city);
+        }
+
+        const { data: publishedProviders, error: fetchError } = await query.order('created_at', { ascending: false });
+        
+        if (fetchError) {
+          throw fetchError;
+        }
+        
+        console.log('📊 Published providers from Supabase:', publishedProviders);
+        
+        // Convert to display format and sort by distance
+        let convertedProviders = (publishedProviders || []).map((provider, index) => ({
+          id: provider.id,
+          name: provider.business_name,
+          description: provider.description || `Professional services in ${provider.city}`,
+          categories: provider.provider_services?.map(s => s.category) || [],
+          location: {
+            address: `${provider.area}, ${provider.city}`,
+            city: provider.city,
+            area: provider.area,
+            coordinates: { 
+              lat: provider.latitude || 28.4595, 
+              lng: provider.longitude || 77.0266 
+            }
+          },
+          contact: {
+            phone: provider.phone,
+            whatsapp: provider.whatsapp,
+            email: provider.email
+          },
+          classes: provider.provider_classes?.map(cls => ({
+            id: cls.id,
+            name: cls.name,
+            description: cls.description,
+            ageGroup: cls.age_group,
+            mode: cls.mode,
+            price: cls.price,
+            duration: cls.duration,
+            schedule: cls.schedule || [],
+            type: cls.mode,
+            batchSize: cls.batch_size,
+            feeType: cls.fee_type
+          })) || [],
+          images: provider.provider_media?.filter(m => m.media_type === 'profile_image').map(m => m.file_path) || 
+                  ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg'],
+          isVerified: provider.is_verified,
+          averageRating: 4.5 + Math.random() * 0.5,
+          totalReviews: Math.floor(Math.random() * 50) + 10,
+          distance: 0, // Will be calculated below
+          tags: provider.is_verified ? ['verified', 'experienced'] : ['experienced'],
+          priceRange: provider.provider_classes?.length > 0 ? {
+            min: Math.min(...provider.provider_classes.map(c => c.price)),
+            max: Math.max(...provider.provider_classes.map(c => c.price))
+          } : { min: 1200, max: 2000 },
+          createdAt: new Date(provider.created_at),
+          updatedAt: new Date(provider.updated_at),
+          status: provider.status
+        }));
+
+        // Sort by distance if user location is available
+        if (userLocation) {
+          convertedProviders = convertedProviders
+            .map(provider => ({
+              ...provider,
+              distance: getDistance(userLocation, provider.location.coordinates)
+            }))
+            .sort((a, b) => a.distance - b.distance)
+            .map(provider => ({
+              ...provider,
+              distance: Math.round(provider.distance * 10) / 10 // Round to 1 decimal
+            }));
+        }
+        
+        console.log('✅ Converted and sorted providers for display:', convertedProviders);
+        setProviders(convertedProviders);
+      }
+    } catch (err) {
+      console.error('❌ Error loading providers:', err);
+      setError(err.message || 'Failed to load providers');
+      
+      // Fallback to mock data on error
+      console.log('🔄 Falling back to mock data due to error');
+      let sortedMockProviders = [...mockProviders];
+      
+      if (userLocation) {
+        sortedMockProviders = mockProviders
+          .map(provider => ({
+            ...provider,
+            distance: getDistance(userLocation, provider.location.coordinates)
+          }))
+          .sort((a, b) => a.distance - b.distance)
+          .map(provider => ({
+            ...provider,
+            distance: Math.round(provider.distance * 10) / 10
+          }));
+      }
+      
+      setProviders(sortedMockProviders);
+    } finally {
+      setLoading(true);
+    }
+  };
 
   const filteredProviders = providers.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
