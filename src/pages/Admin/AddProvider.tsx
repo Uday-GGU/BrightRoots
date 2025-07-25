@@ -124,24 +124,11 @@ export default function AddProvider() {
     setIsSubmitting(true);
 
     try {
-      console.log('📝 Creating new provider in Supabase...');
+      console.log('📝 Creating new provider...', formData);
       
-      // First, create a user in Supabase Auth
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: formData.email,
-        password: 'temp123456', // Temporary password
-        email_confirm: true
-      });
-
-      if (authError) {
-        throw new Error(`Failed to create user: ${authError.message}`);
-      }
-
-      console.log('✅ Auth user created:', authUser.user.id);
-
-      // Create provider in Supabase using the auth user's ID
+      // Create provider directly without auth user (admin-created providers)
       const providerData = {
-        user_id: authUser.user.id, // Use the actual auth user ID
+        user_id: null, // Admin-created providers don't have auth users initially
         business_name: formData.businessName,
         owner_name: formData.ownerName,
         email: formData.email,
@@ -159,17 +146,20 @@ export default function AddProvider() {
         longitude: 77.0266
       };
 
+      console.log('📝 Creating provider with data:', providerData);
       const newProvider = await ProviderService.createProvider(providerData);
       console.log('✅ Provider created:', newProvider);
       
       // Add services
       if (formData.categories.length > 0) {
+        console.log('📝 Adding services:', formData.categories);
         await ProviderService.addProviderServices(newProvider.id, formData.categories);
         console.log('✅ Services added:', formData.categories);
       }
       
       // Create a sample class for each category
       for (const category of formData.categories) {
+        console.log('📝 Creating class for category:', category);
         await ProviderService.createClass({
           provider_id: newProvider.id,
           name: `${category.charAt(0).toUpperCase() + category.slice(1)} Classes`,
@@ -189,7 +179,7 @@ export default function AddProvider() {
       navigate('/admin/dashboard');
     } catch (error) {
       console.error('Error adding provider:', error);
-      alert(`Failed to add provider: ${error.message}. Please try again.`);
+      alert(`Failed to add provider: ${error?.message || 'Unknown error'}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }
