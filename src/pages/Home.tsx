@@ -49,23 +49,33 @@ export default function Home() {
 
   // 🌍 Get Current Location or use user's saved location
   useEffect(() => {
+    console.log('🌍 Setting up location detection...');
+    
     if (user?.location?.coordinates) {
+      console.log('📍 Using saved user location:', user.location.coordinates);
       setUserLocation({
         latitude: user.location.coordinates.lat,
         longitude: user.location.coordinates.lng
       });
     } else {
-      // Try to get current location
+      console.log('🔍 Attempting to get current GPS location...');
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          console.log('✅ GPS location captured:', pos.coords);
           setUserLocation({
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude
           });
         },
-        () => {
-          // Fallback to default location (Gurgaon)
+        (error) => {
+          console.warn('❌ GPS location failed:', error);
+          console.log('🔄 Using fallback location (Gurgaon)');
           setUserLocation({ latitude: 28.4595, longitude: 77.0266 });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
         }
       );
     }
