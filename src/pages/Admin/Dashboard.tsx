@@ -98,6 +98,86 @@ export default function AdminDashboard() {
     }
   };
 
+  const insertSampleDataIfNeeded = async () => {
+    try {
+      // Check if sample data already exists
+      const { data: existingProviders, error } = await supabase
+        .from('providers')
+        .select('id')
+        .limit(1);
+
+      if (error) {
+        console.error('❌ Error checking existing providers:', error);
+        return;
+      }
+
+      // If providers already exist, don't insert sample data
+      if (existingProviders && existingProviders.length > 0) {
+        console.log('✅ Sample data already exists, skipping insertion');
+        return;
+      }
+
+      console.log('🔄 Inserting sample provider data...');
+
+      // Create a sample auth user first
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: 'sample.provider@brightroots.com',
+        password: 'samplepassword123',
+        email_confirm: true
+      });
+
+      if (authError) {
+        console.error('❌ Error creating sample auth user:', authError);
+        return;
+      }
+
+      // Create sample provider
+      const sampleProvider = await ProviderService.createProvider({
+        user_id: authUser.user.id,
+        business_name: 'Bright Learning Center',
+        owner_name: 'Priya Sharma',
+        email: 'sample.provider@brightroots.com',
+        phone: '+91 9876543210',
+        whatsapp: '+91 9876543210',
+        website: 'https://brightlearning.com',
+        description: 'Premier learning center offering quality education and skill development programs for children of all ages.',
+        address: '123 Education Street, Knowledge Park',
+        city: 'Mumbai',
+        area: 'Andheri West',
+        pincode: '400058',
+        status: 'approved',
+        is_published: true
+      });
+
+      if (sampleProvider) {
+        // Add sample services
+        await ProviderService.addProviderServices(sampleProvider.id, ['tuition', 'coding']);
+
+        // Add sample class
+        await ProviderService.createClass(sampleProvider.id, {
+          name: 'Mathematics Mastery',
+          description: 'Comprehensive mathematics program covering all grade levels with personalized attention.',
+          category: 'tuition',
+          age_group: '8-16 years',
+          mode: 'offline',
+          duration: '1 hour',
+          price: 1500,
+          fee_type: 'per_session',
+          batch_size: 8,
+          schedule: {
+            days: ['Monday', 'Wednesday', 'Friday'],
+            time: '4:00 PM - 5:00 PM'
+          }
+        });
+
+        console.log('✅ Sample data inserted successfully');
+      }
+
+    } catch (error) {
+      console.error('❌ Error inserting sample data:', error);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
     localStorage.removeItem('adminUser');
