@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, supabaseAdmin } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { 
   Users, 
   Plus, 
@@ -12,8 +12,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  LogOut,
-  Database
+  LogOut
 } from 'lucide-react';
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
@@ -30,6 +29,14 @@ interface Provider {
   categories: string[];
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+  isPublished?: boolean;
+}
+
+interface Stats {
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
 }
 
 export default function AdminDashboard() {
@@ -47,10 +54,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Load providers from Supabase
     loadProviders();
-    
-    // Auto-insert sample data on first load
     insertSampleDataIfNeeded();
   }, [navigate]);
 
@@ -59,7 +63,6 @@ export default function AdminDashboard() {
       setLoading(true);
       console.log('🔄 Loading providers from Supabase...');
       
-      // Get all providers (not just published ones) for admin view
       const { data, error } = await supabase
         .from('providers')
         .select(`
@@ -73,7 +76,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      // Convert to admin dashboard format
       const convertedProviders = data.map(provider => ({
         id: provider.id,
         businessName: provider.business_name,
@@ -84,7 +86,7 @@ export default function AdminDashboard() {
         area: provider.area,
         categories: provider.provider_services?.map(s => s.category) || [],
         status: provider.status,
-        createdAt: provider.created_at.split('T')[0], // Format date
+        createdAt: provider.created_at.split('T')[0],
         isPublished: provider.is_published
       }));
 
@@ -111,7 +113,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      // If providers already exist, don't insert sample data
       if (existingProviders && existingProviders.length > 0) {
         console.log('✅ Sample data already exists, skipping insertion');
         return;
@@ -119,10 +120,8 @@ export default function AdminDashboard() {
 
       console.log('🔄 Inserting sample provider data...');
 
-      // Generate a valid UUID for demo user ID
       const demoUserId = crypto.randomUUID();
 
-      // Create sample provider
       const sampleProvider = await ProviderService.createProvider({
         user_id: demoUserId,
         business_name: 'Bright Learning Center',
@@ -141,10 +140,8 @@ export default function AdminDashboard() {
       });
 
       if (sampleProvider) {
-        // Add sample services
         await ProviderService.addProviderServices(sampleProvider.id, ['tuition', 'coding']);
 
-        // Add sample class
         await ProviderService.createClass({
           provider_id: sampleProvider.id,
           name: 'Mathematics Mastery',
@@ -163,6 +160,7 @@ export default function AdminDashboard() {
         });
 
         console.log('✅ Sample data inserted successfully');
+        await loadProviders(); // Reload to show new data
       }
 
     } catch (error) {
@@ -176,54 +174,40 @@ export default function AdminDashboard() {
     navigate('/');
   };
 
-  const handleStatusChange = (providerId: string, newStatus: 'approved' | 'rejected') => {
-    const updateStatus = async () => {
-      try {
-        console.log('📢 Updating provider status:', providerId, 'to', newStatus);
-        
-        // Update in Supabase
-        await ProviderService.updateProvider(providerId, { 
-          status: newStatus,
-          // Auto-publish when approved, unpublish when rejected
-          is_published: newStatus === 'approved'
-        });
-        
-        // Reload providers to get updated data
-        await loadProviders();
-        
-        console.log('✅ Provider status updated successfully');
-        
-      } catch (error) {
-        console.error('❌ Error updating provider status:', error);
-        alert('Failed to update provider status. Please try again.');
-      }
-    };
-    
-    updateStatus();
+  const handleStatusChange = async (providerId: string, newStatus: 'approved' | 'rejected') => {
+    try {
+      console.log('📢 Updating provider status:', providerId, 'to', newStatus);
+      
+      await ProviderService.updateProvider(providerId, { 
+        status: newStatus,
+        is_published: newStatus === 'approved'
+      });
+      
+      await loadProviders();
+      console.log('✅ Provider status updated successfully');
+      
+    } catch (error) {
+      console.error('❌ Error updating provider status:', error);
+      alert('Failed to update provider status. Please try again.');
+    }
   };
 
-  const handleDeleteProvider = (providerId: string) => {
-    if (confirm('Are you sure you want to delete this provider?')) {
-      const deleteProvider = async () => {
-        try {
-          // In a real app, you'd have a delete method in ProviderService
-          const { error } = await supabase
-            .from('providers')
-            .delete()
-            .eq('id', providerId);
-            
-          if (error) throw error;
-          
-          // Reload providers
-          await loadProviders();
-          
-        } catch (error) {
-          console.error('❌ Error deleting provider:', error);
-          alert('Failed to delete provider. Please try again.');
-        }
-      };
+  const handleDeleteProvider = async (providerId: string) => {
+    if (!confirm('Are you sure you want to delete this provider?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('providers')
+        .delete()
+        .eq('id', providerId);
+        
+      if (error) throw error;
       
-      deleteProvider();
+      await loadProviders();
+      
+    } catch (error) {
+      console.error('❌ Error deleting provider:', error);
+      alert('Failed to delete provider. Please try again.');
     }
   };
 
@@ -235,38 +219,49 @@ export default function AdminDashboard() {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusColor = (status: string): string => {
+    const colors = {
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
+      pending: 'bg-yellow-100 text-yellow-800'
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle className="w-4 h-4" />;
-      case 'rejected':
-        return <XCircle className="w-4 h-4" />;
-      case 'pending':
-        return <Clock className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
+    const icons = {
+      approved: <CheckCircle className="w-4 h-4" />,
+      rejected: <XCircle className="w-4 h-4" />,
+      pending: <Clock className="w-4 h-4" />
+    };
+    return icons[status as keyof typeof icons] || <Clock className="w-4 h-4" />;
   };
 
-  const stats = {
+  const stats: Stats = {
     total: providers.length,
     approved: providers.filter(p => p.status === 'approved').length,
     pending: providers.filter(p => p.status === 'pending').length,
     rejected: providers.filter(p => p.status === 'rejected').length
   };
+
+  const StatCard = ({ label, value, color, icon: Icon }: {
+    label: string;
+    value: number;
+    color: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }) => (
+    <Card className="p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{label}</p>
+          <p className={`text-3xl font-bold mt-2 ${color}`}>{value}</p>
+        </div>
+        <div className={`p-3 rounded-full bg-opacity-20 ${color.replace('text-', 'bg-').replace('-600', '-100')}`}>
+          <Icon className={`w-6 h-6 ${color}`} />
+        </div>
+      </div>
+    </Card>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -302,53 +297,10 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Providers</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
-              </div>
-              <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-                <Users className="w-6 h-6" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Approved</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">{stats.approved}</p>
-              </div>
-              <div className="p-3 rounded-full bg-green-100 text-green-600">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-2">{stats.pending}</p>
-              </div>
-              <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                <Clock className="w-6 h-6" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Rejected</p>
-                <p className="text-3xl font-bold text-red-600 mt-2">{stats.rejected}</p>
-              </div>
-              <div className="p-3 rounded-full bg-red-100 text-red-600">
-                <XCircle className="w-6 h-6" />
-              </div>
-            </div>
-          </Card>
+          <StatCard label="Total Providers" value={stats.total} color="text-blue-600" icon={Users} />
+          <StatCard label="Approved" value={stats.approved} color="text-green-600" icon={CheckCircle} />
+          <StatCard label="Pending" value={stats.pending} color="text-yellow-600" icon={Clock} />
+          <StatCard label="Rejected" value={stats.rejected} color="text-red-600" icon={XCircle} />
         </div>
 
         {/* Filters and Search */}
@@ -389,121 +341,7 @@ export default function AdminDashboard() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-gray-600">Loading providers...</p>
             </div>
-          ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Provider
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Categories
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProviders.map((provider) => (
-                  <tr key={provider.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {provider.businessName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {provider.ownerName}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{provider.email}</div>
-                      <div className="text-sm text-gray-500">{provider.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{provider.city}</div>
-                      <div className="text-sm text-gray-500">{provider.area}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-wrap gap-1">
-                        {provider.categories.map(category => (
-                          <span
-                            key={category}
-                            className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
-                          >
-                            {category}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(provider.status)}`}>
-                        {getStatusIcon(provider.status)}
-                        <span className="ml-1 capitalize">{provider.status}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        {provider.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => handleStatusChange(provider.id, 'approved')}
-                              className="text-green-600 hover:text-green-900"
-                              title="Approve"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleStatusChange(provider.id, 'rejected')}
-                              className="text-red-600 hover:text-red-900"
-                              title="Reject"
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => navigate(`/admin/provider/${provider.id}`)}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => navigate(`/admin/edit-provider/${provider.id}`)}
-                          className="text-gray-600 hover:text-gray-900"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProvider(provider.id)}
-                          className="text-red-600 hover:text-red-900"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          )}
-
-          {filteredProviders.length === 0 && (
+          ) : filteredProviders.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No providers found</h3>
@@ -517,6 +355,118 @@ export default function AdminDashboard() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Provider
               </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Provider
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Location
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Categories
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProviders.map((provider) => (
+                    <tr key={provider.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {provider.businessName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {provider.ownerName}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{provider.email}</div>
+                        <div className="text-sm text-gray-500">{provider.phone}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{provider.city}</div>
+                        <div className="text-sm text-gray-500">{provider.area}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-wrap gap-1">
+                          {provider.categories.map(category => (
+                            <span
+                              key={category}
+                              className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
+                            >
+                              {category}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(provider.status)}`}>
+                          {getStatusIcon(provider.status)}
+                          <span className="ml-1 capitalize">{provider.status}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          {provider.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleStatusChange(provider.id, 'approved')}
+                                className="text-green-600 hover:text-green-900"
+                                title="Approve"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleStatusChange(provider.id, 'rejected')}
+                                className="text-red-600 hover:text-red-900"
+                                title="Reject"
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => navigate(`/admin/provider/${provider.id}`)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => navigate(`/admin/edit-provider/${provider.id}`)}
+                            className="text-gray-600 hover:text-gray-900"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProvider(provider.id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </Card>
