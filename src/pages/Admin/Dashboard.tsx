@@ -119,8 +119,8 @@ export default function AdminDashboard() {
 
       console.log('🔄 Inserting sample provider data...');
 
-      // Use a consistent demo user ID for sample data
-      const demoUserId = 'demo-sample-user-id';
+      // Generate a valid UUID for demo user ID
+      const demoUserId = crypto.randomUUID();
 
       // Create sample provider
       const sampleProvider = await ProviderService.createProvider({
