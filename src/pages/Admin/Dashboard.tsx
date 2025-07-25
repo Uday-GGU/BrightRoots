@@ -119,16 +119,32 @@ export default function AdminDashboard() {
 
       console.log('🔄 Inserting sample provider data...');
 
-      // Create a sample auth user first
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: 'sample.provider@brightroots.com',
-        password: 'samplepassword123',
-        email_confirm: true
-      });
-
-      if (authError) {
-        console.error('❌ Error creating sample auth user:', authError);
+      // Check if sample user already exists
+      let authUser;
+      const { data: existingUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail('sample.provider@brightroots.com');
+      
+      if (getUserError && getUserError.message !== 'User not found') {
+        console.error('❌ Error checking existing user:', getUserError);
         return;
+      }
+      
+      if (existingUser && existingUser.user) {
+        console.log('✅ Sample user already exists, using existing user');
+        authUser = { user: existingUser.user };
+      } else {
+        // Create a sample auth user
+        const { data: newAuthUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email: 'sample.provider@brightroots.com',
+          password: 'samplepassword123',
+          email_confirm: true
+        });
+
+        if (authError) {
+          console.error('❌ Error creating sample auth user:', authError);
+          return;
+        }
+        
+        authUser = newAuthUser;
       }
 
       // Create sample provider
@@ -154,7 +170,8 @@ export default function AdminDashboard() {
         await ProviderService.addProviderServices(sampleProvider.id, ['tuition', 'coding']);
 
         // Add sample class
-        await ProviderService.createClass(sampleProvider.id, {
+        await ProviderService.createClass({
+          provider_id: sampleProvider.id,
           name: 'Mathematics Mastery',
           description: 'Comprehensive mathematics program covering all grade levels with personalized attention.',
           category: 'tuition',
