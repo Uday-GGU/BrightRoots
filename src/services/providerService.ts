@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseAdmin } from '../lib/supabase';
 import { Database } from '../types/database';
 
 type Provider = Database['public']['Tables']['providers']['Row'];
@@ -19,7 +19,7 @@ export class ProviderService {
       is_published: data.status === 'approved' // Auto-publish if approved
     };
     
-    const { data: provider, error } = await supabase
+    const { data: provider, error } = await supabaseAdmin
       .from('providers')
       .insert(providerData)
       .select()
@@ -73,7 +73,7 @@ export class ProviderService {
 
   // Publish/Unpublish providers
   static async publishProvider(id: string): Promise<Provider> {
-    const { data: provider, error } = await supabase
+    const { data: provider, error } = await supabaseAdmin
       .from('providers')
       .update({ is_published: true, status: 'approved' })
       .eq('id', id)
@@ -85,7 +85,7 @@ export class ProviderService {
   }
 
   static async unpublishProvider(id: string): Promise<Provider> {
-    const { data: provider, error } = await supabase
+    const { data: provider, error } = await supabaseAdmin
       .from('providers')
       .update({ is_published: false })
       .eq('id', id)
@@ -143,7 +143,7 @@ export class ProviderService {
       category: category as any
     }));
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('provider_services')
       .insert(services);
 
@@ -162,7 +162,7 @@ export class ProviderService {
 
   // Provider Classes
   static async createClass(data: ProviderClassInsert): Promise<ProviderClass> {
-    const { data: providerClass, error } = await supabase
+    const { data: providerClass, error } = await supabaseAdmin
       .from('provider_classes')
       .insert(data)
       .select()
