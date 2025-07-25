@@ -14,7 +14,6 @@ import DebugLogin from './pages/DebugLogin';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/Admin/Dashboard';
 import AddProvider from './pages/Admin/AddProvider';
-import ProviderSignup from './pages/Provider/Signup';
 import ProviderLogin from './pages/Provider/Login';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
