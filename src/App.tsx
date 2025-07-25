@@ -14,6 +14,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/Admin/Dashboard';
 import AddProvider from './pages/Admin/AddProvider';
 import ProviderLogin from './pages/Provider/Login';
+import ProviderSignup from './pages/Provider/Signup';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
