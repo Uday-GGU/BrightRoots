@@ -12,7 +12,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  LogOut
+  LogOut,
+  Database
 } from 'lucide-react';
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
@@ -37,6 +38,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [loading, setLoading] = useState(true);
+  const [isInsertingSampleData, setIsInsertingSampleData] = useState(false);
 
   useEffect(() => {
     // Check admin authentication
@@ -148,7 +150,271 @@ export default function AdminDashboard() {
       };
       
       deleteProvider();
+  const insertSampleClassData = async () => {
+    if (!confirm('This will add sample classes to all approved providers. Continue?')) {
+      return;
     }
+
+    setIsInsertingSampleData(true);
+    
+    try {
+      console.log('📊 Inserting sample class data...');
+      
+      // Get all approved providers
+      const approvedProviders = providers.filter(p => p.status === 'approved');
+      
+      if (approvedProviders.length === 0) {
+        alert('No approved providers found. Please approve some providers first.');
+        return;
+      }
+
+      let totalClassesAdded = 0;
+
+      for (const provider of approvedProviders) {
+        try {
+          // Check if provider already has classes
+          const existingClasses = await ProviderService.getProviderClasses(provider.id);
+          
+          if (existingClasses.length > 0) {
+            console.log(`⏭️ Skipping ${provider.businessName} - already has ${existingClasses.length} classes`);
+            continue;
+          }
+
+          // Create sample classes based on provider's categories
+          for (const category of provider.categories) {
+            const sampleClasses = getSampleClassesForCategory(category);
+            
+            for (const classData of sampleClasses) {
+              await ProviderService.createClass({
+                provider_id: provider.id,
+                name: classData.name,
+                description: classData.description,
+                category: category,
+                age_group: classData.ageGroup,
+                mode: classData.mode,
+                duration: classData.duration,
+                price: classData.price,
+                fee_type: classData.feeType,
+                batch_size: classData.batchSize,
+                schedule: classData.schedule
+              });
+              totalClassesAdded++;
+            }
+          }
+          
+          console.log(`✅ Added classes for ${provider.businessName}`);
+        } catch (error) {
+          console.error(`❌ Error adding classes for ${provider.businessName}:`, error);
+        }
+      }
+
+      alert(`Successfully added ${totalClassesAdded} sample classes to ${approvedProviders.length} providers!`);
+      
+    } catch (error) {
+      console.error('❌ Error inserting sample data:', error);
+      alert('Failed to insert sample data. Please try again.');
+    } finally {
+      setIsInsertingSampleData(false);
+    }
+  };
+    }
+  const getSampleClassesForCategory = (category: string) => {
+    const sampleClasses = {
+      tuition: [
+        {
+          name: 'Mathematics (Class 9-10)',
+          description: 'Comprehensive math coaching with concept clarity and problem-solving techniques',
+          ageGroup: '14-16 years',
+          mode: 'offline' as const,
+          duration: '90 minutes',
+          price: 1200,
+          feeType: 'per_session' as const,
+          batchSize: 8,
+          schedule: { timings: ['Mon 4-5:30 PM', 'Wed 4-5:30 PM', 'Fri 4-5:30 PM'] }
+        },
+        {
+          name: 'Science (Physics & Chemistry)',
+          description: 'Interactive science classes with practical experiments and theory',
+          ageGroup: '14-18 years',
+          mode: 'offline' as const,
+          duration: '2 hours',
+          price: 1500,
+          feeType: 'per_session' as const,
+          batchSize: 6,
+          schedule: { timings: ['Tue 5-7 PM', 'Thu 5-7 PM', 'Sat 10-12 PM'] }
+        }
+      ],
+      music: [
+        {
+          name: 'Piano for Beginners',
+          description: 'Learn piano basics with fun exercises and popular songs',
+          ageGroup: '6-12 years',
+          mode: 'offline' as const,
+          duration: '45 minutes',
+          price: 1500,
+          feeType: 'per_session' as const,
+          batchSize: 4,
+          schedule: { timings: ['Mon 4-5 PM', 'Wed 4-5 PM', 'Sat 10-11 AM'] }
+        },
+        {
+          name: 'Guitar Classes',
+          description: 'Acoustic and electric guitar lessons for all skill levels',
+          ageGroup: '10-18 years',
+          mode: 'offline' as const,
+          duration: '60 minutes',
+          price: 1800,
+          feeType: 'per_session' as const,
+          batchSize: 3,
+          schedule: { timings: ['Tue 5-6 PM', 'Thu 5-6 PM', 'Sun 11-12 PM'] }
+        }
+      ],
+      dance: [
+        {
+          name: 'Classical Dance (Bharatanatyam)',
+          description: 'Traditional Indian classical dance with proper technique and expressions',
+          ageGroup: '8-16 years',
+          mode: 'offline' as const,
+          duration: '90 minutes',
+          price: 2000,
+          feeType: 'per_session' as const,
+          batchSize: 10,
+          schedule: { timings: ['Mon 6-7:30 PM', 'Wed 6-7:30 PM', 'Sat 4-5:30 PM'] }
+        },
+        {
+          name: 'Hip Hop Dance',
+          description: 'Modern hip hop dance moves and choreography for kids and teens',
+          ageGroup: '10-18 years',
+          mode: 'offline' as const,
+          duration: '60 minutes',
+          price: 1600,
+          feeType: 'per_session' as const,
+          batchSize: 12,
+          schedule: { timings: ['Tue 6-7 PM', 'Thu 6-7 PM', 'Sun 5-6 PM'] }
+        }
+      ],
+      sports: [
+        {
+          name: 'Football Training',
+          description: 'Professional football coaching for young athletes with skill development',
+          ageGroup: '8-16 years',
+          mode: 'offline' as const,
+          duration: '90 minutes',
+          price: 2000,
+          feeType: 'per_session' as const,
+          batchSize: 15,
+          schedule: { timings: ['Tue 5-6:30 PM', 'Thu 5-6:30 PM', 'Sun 9-10:30 AM'] }
+        },
+        {
+          name: 'Swimming Classes',
+          description: 'Learn swimming techniques from basic to advanced levels',
+          ageGroup: '6-14 years',
+          mode: 'offline' as const,
+          duration: '60 minutes',
+          price: 2500,
+          feeType: 'per_session' as const,
+          batchSize: 8,
+          schedule: { timings: ['Mon 6-7 AM', 'Wed 6-7 AM', 'Fri 6-7 AM'] }
+        }
+      ],
+      coding: [
+        {
+          name: 'Python for Kids',
+          description: 'Learn programming with fun Python projects and games',
+          ageGroup: '10-16 years',
+          mode: 'online' as const,
+          duration: '60 minutes',
+          price: 1800,
+          feeType: 'per_session' as const,
+          batchSize: 6,
+          schedule: { timings: ['Mon 6-7 PM', 'Wed 6-7 PM', 'Sat 11-12 PM'] }
+        },
+        {
+          name: 'Web Development Basics',
+          description: 'HTML, CSS, and JavaScript fundamentals for teenagers',
+          ageGroup: '13-18 years',
+          mode: 'online' as const,
+          duration: '90 minutes',
+          price: 2200,
+          feeType: 'per_session' as const,
+          batchSize: 5,
+          schedule: { timings: ['Tue 7-8:30 PM', 'Thu 7-8:30 PM', 'Sun 2-3:30 PM'] }
+        }
+      ],
+      art: [
+        {
+          name: 'Drawing & Sketching',
+          description: 'Basic to advanced drawing techniques with pencil and charcoal',
+          ageGroup: '8-16 years',
+          mode: 'offline' as const,
+          duration: '90 minutes',
+          price: 1400,
+          feeType: 'per_session' as const,
+          batchSize: 8,
+          schedule: { timings: ['Mon 4-5:30 PM', 'Wed 4-5:30 PM', 'Sat 2-3:30 PM'] }
+        },
+        {
+          name: 'Painting Workshop',
+          description: 'Watercolor and acrylic painting techniques for creative expression',
+          ageGroup: '10-18 years',
+          mode: 'offline' as const,
+          duration: '2 hours',
+          price: 1800,
+          feeType: 'per_session' as const,
+          batchSize: 6,
+          schedule: { timings: ['Tue 4-6 PM', 'Thu 4-6 PM', 'Sun 10-12 PM'] }
+        }
+      ],
+      daycare: [
+        {
+          name: 'After School Care',
+          description: 'Safe and supervised after-school care with homework assistance',
+          ageGroup: '6-12 years',
+          mode: 'offline' as const,
+          duration: '3 hours',
+          price: 8000,
+          feeType: 'monthly' as const,
+          batchSize: 20,
+          schedule: { timings: ['Mon-Fri 2-5 PM'] }
+        },
+        {
+          name: 'Full Day Care',
+          description: 'Complete daycare services with meals, activities, and learning',
+          ageGroup: '3-6 years',
+          mode: 'offline' as const,
+          duration: '8 hours',
+          price: 15000,
+          feeType: 'monthly' as const,
+          batchSize: 15,
+          schedule: { timings: ['Mon-Fri 8 AM-4 PM'] }
+        }
+      ],
+      camps: [
+        {
+          name: 'Summer Activity Camp',
+          description: 'Fun-filled summer camp with sports, arts, and outdoor activities',
+          ageGroup: '8-14 years',
+          mode: 'offline' as const,
+          duration: '6 hours',
+          price: 12000,
+          feeType: 'monthly' as const,
+          batchSize: 25,
+          schedule: { timings: ['Mon-Fri 9 AM-3 PM'] }
+        },
+        {
+          name: 'STEM Camp',
+          description: 'Science, technology, engineering, and math activities for curious minds',
+          ageGroup: '10-16 years',
+          mode: 'offline' as const,
+          duration: '4 hours',
+          price: 10000,
+          feeType: 'monthly' as const,
+          batchSize: 15,
+          schedule: { timings: ['Mon-Fri 10 AM-2 PM'] }
+        }
+      ]
+    };
+  };
+    return sampleClasses[category as keyof typeof sampleClasses] || [];
   };
 
   const filteredProviders = providers.filter(provider => {
@@ -209,6 +475,15 @@ export default function AdminDashboard() {
               >
                 <Plus className="w-4 h-4" />
                 Add Provider
+              </Button>
+              <Button 
+                onClick={insertSampleClassData}
+                disabled={isInsertingSampleData}
+                variant="secondary"
+                className="flex items-center gap-2"
+              >
+                <Database className="w-4 h-4" />
+                {isInsertingSampleData ? 'Adding Classes...' : 'Add Sample Classes'}
               </Button>
               <Button 
                 onClick={handleLogout}
