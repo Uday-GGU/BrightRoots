@@ -46,6 +46,61 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [loading, setLoading] = useState(true);
 
+  // Sample providers data
+  const sampleProviders = [
+    {
+      user_id: crypto.randomUUID(),
+      business_name: 'Happy Minds Tuition Center',
+      owner_name: 'Rajesh Kumar',
+      email: 'happyminds@example.com',
+      phone: '9876543210',
+      whatsapp: '9876543210',
+      description: 'Expert tutors for Math, Science, and English',
+      address: 'MG Road, Bangalore',
+      city: 'Bangalore',
+      area: 'MG Road',
+      pincode: '560001',
+      latitude: 12.9716,
+      longitude: 77.5946,
+      status: 'approved' as const,
+      is_published: true
+    },
+    {
+      user_id: crypto.randomUUID(),
+      business_name: 'Tiny Talents Art School',
+      owner_name: 'Priya Sharma',
+      email: 'tinytalents@example.com',
+      phone: '9999888877',
+      whatsapp: '9999888877',
+      description: 'Painting, Craft & Sketching for kids',
+      address: 'Koramangala, Bangalore',
+      city: 'Bangalore',
+      area: 'Koramangala',
+      pincode: '560034',
+      latitude: 12.976,
+      longitude: 77.58,
+      status: 'approved' as const,
+      is_published: true
+    },
+    {
+      user_id: crypto.randomUUID(),
+      business_name: 'KickStart Football Club',
+      owner_name: 'Amit Singh',
+      email: 'kickstartfc@example.com',
+      phone: '9900112233',
+      whatsapp: '9900112233',
+      description: 'Football coaching by certified trainers',
+      address: 'Whitefield, Bangalore',
+      city: 'Bangalore',
+      area: 'Whitefield',
+      pincode: '560066',
+      latitude: 12.9702,
+      longitude: 77.595,
+      status: 'approved' as const,
+      is_published: true
+    }
+  ];
+
   useEffect(() => {
     // Check admin authentication
     const adminAuth = localStorage.getItem('adminAuth');
@@ -55,7 +110,7 @@ export default function AdminDashboard() {
     }
 
     loadProviders();
-    insertSampleDataIfNeeded();
+    insertSampleProvidersIfNeeded();
   }, [navigate]);
 
   const loadProviders = async () => {
@@ -100,7 +155,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const insertSampleDataIfNeeded = async () => {
+  const insertSampleProvidersIfNeeded = async () => {
     try {
       // Check if sample data already exists
       const { data: existingProviders, error } = await supabase
@@ -118,53 +173,74 @@ export default function AdminDashboard() {
         return;
       }
 
-      console.log('🔄 Inserting sample provider data...');
+      console.log('🔄 Inserting sample providers data...');
 
-      const demoUserId = crypto.randomUUID();
-
-      const sampleProvider = await ProviderService.createProvider({
-        user_id: demoUserId,
-        business_name: 'Bright Learning Center',
-        owner_name: 'Priya Sharma',
-        email: 'sample.provider@brightroots.com',
-        phone: '+91 9876543210',
-        whatsapp: '+91 9876543210',
-        website: 'https://brightlearning.com',
-        description: 'Premier learning center offering quality education and skill development programs for children of all ages.',
-        address: '123 Education Street, Knowledge Park',
-        city: 'Mumbai',
-        area: 'Andheri West',
-        pincode: '400058',
-        status: 'approved',
-        is_published: true
-      });
-
-      if (sampleProvider) {
-        await ProviderService.addProviderServices(sampleProvider.id, ['tuition', 'coding']);
-
-        await ProviderService.createClass({
-          provider_id: sampleProvider.id,
-          name: 'Mathematics Mastery',
-          description: 'Comprehensive mathematics program covering all grade levels with personalized attention.',
-          category: 'tuition',
-          age_group: '8-16 years',
-          mode: 'offline',
-          duration: '1 hour',
-          price: 1500,
-          fee_type: 'per_session',
-          batch_size: 8,
-          schedule: {
-            days: ['Monday', 'Wednesday', 'Friday'],
-            time: '4:00 PM - 5:00 PM'
+      // Insert all sample providers
+      for (const providerData of sampleProviders) {
+        const newProvider = await ProviderService.createProvider(providerData);
+        
+        // Add services based on provider type
+        let services: string[] = [];
+        if (providerData.business_name.includes('Tuition')) {
+          services = ['tuition'];
+        } else if (providerData.business_name.includes('Art')) {
+          services = ['art'];
+        } else if (providerData.business_name.includes('Football')) {
+          services = ['sports'];
+        }
+        
+        if (services.length > 0) {
+          await ProviderService.addProviderServices(newProvider.id, services);
+          
+          // Create sample classes
+          if (services.includes('tuition')) {
+            await ProviderService.createClass({
+              provider_id: newProvider.id,
+              name: 'Mathematics Classes',
+              description: 'Expert tutoring for Math, Science, and English',
+              category: 'tuition',
+              age_group: '6-14 years',
+              mode: 'offline',
+              duration: '2 hours',
+              price: 2000,
+              fee_type: 'monthly',
+              schedule: { timing: 'Mon-Fri 5PM-7PM' }
+            });
+          } else if (services.includes('art')) {
+            await ProviderService.createClass({
+              provider_id: newProvider.id,
+              name: 'Art & Craft Classes',
+              description: 'Painting, Craft & Sketching for kids',
+              category: 'art',
+              age_group: '4-10 years',
+              mode: 'offline',
+              duration: '2 hours',
+              price: 1500,
+              fee_type: 'monthly',
+              schedule: { timing: 'Sat-Sun 10AM-12PM' }
+            });
+          } else if (services.includes('sports')) {
+            await ProviderService.createClass({
+              provider_id: newProvider.id,
+              name: 'Football Training',
+              description: 'Football coaching by certified trainers',
+              category: 'sports',
+              age_group: '8-16 years',
+              mode: 'offline',
+              duration: '2 hours',
+              price: 2500,
+              fee_type: 'monthly',
+              schedule: { timing: 'Mon-Wed-Fri 6AM-8AM' }
+            });
           }
-        });
-
-        console.log('✅ Sample data inserted successfully');
-        await loadProviders(); // Reload to show new data
+        }
       }
 
+      console.log('✅ Sample providers data inserted successfully');
+      await loadProviders(); // Reload to show new data
+      
     } catch (error) {
-      console.error('❌ Error inserting sample data:', error);
+      console.error('❌ Error inserting sample providers:', error);
     }
   };
 

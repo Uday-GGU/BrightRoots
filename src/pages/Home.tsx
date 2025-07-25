@@ -32,8 +32,9 @@ export default function Home() {
     const loadProviders = async () => {
       setLoading(true);
       setError(null);
-      // Load providers from admin data
+      
       try {
+        // Fetch published providers from Supabase
         const publishedProviders = await ProviderService.getPublishedProviders();
         console.log('📊 Published providers from Supabase:', publishedProviders);
         
@@ -47,7 +48,7 @@ export default function Home() {
         }
         
         // Convert to display format
-        const convertedProviders = filteredProviders.map(provider => ({
+        const convertedProviders = filteredProviders.map((provider, index) => ({
           id: provider.id,
           name: provider.business_name,
           description: provider.description || `Professional services in ${provider.city}`,
@@ -84,9 +85,13 @@ export default function Home() {
           isVerified: provider.is_verified,
           averageRating: 4.5 + Math.random() * 0.5,
           totalReviews: Math.floor(Math.random() * 50) + 10,
-          distance: Math.floor(Math.random() * 10) + 1,
+          distance: provider.latitude && provider.longitude ? 
+            Math.floor(Math.random() * 10) + 1 : 0,
           tags: provider.is_verified ? ['verified', 'experienced'] : ['experienced'],
-          priceRange: { min: 1200, max: 2000 },
+          priceRange: provider.provider_classes?.length > 0 ? {
+            min: Math.min(...provider.provider_classes.map(c => c.price)),
+            max: Math.max(...provider.provider_classes.map(c => c.price))
+          } : { min: 1200, max: 2000 },
           createdAt: new Date(provider.created_at),
           updatedAt: new Date(provider.updated_at),
           status: provider.status
@@ -104,25 +109,11 @@ export default function Home() {
 
     loadProviders();
     
-    // Listen for data sync events
-    const handleDataSync = (e) => {
-      console.log('🔄 Data synced, reloading providers...');
-      loadProviders();
-    };
+    // Refresh data every 30 seconds to show new providers
+    const interval = setInterval(loadProviders, 30000);
     
-    const handleProviderDataChanged = (e) => {
-      console.log('🔄 Provider data changed, reloading providers...');
-      loadProviders();
-    };
-    
-    window.addEventListener('providerDataSynced', handleDataSync);
-    window.addEventListener('providerDataChanged', handleProviderDataChanged);
-    
-    return () => {
-      window.removeEventListener('providerDataSynced', handleDataSync);
-      window.removeEventListener('providerDataChanged', handleProviderDataChanged);
-    };
-  }, []);
+    return () => clearInterval(interval);
+  }, [user?.location]);
 
   const filteredProviders = providers.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
