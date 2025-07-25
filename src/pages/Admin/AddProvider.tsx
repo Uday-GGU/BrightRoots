@@ -126,9 +126,22 @@ export default function AddProvider() {
     try {
       console.log('📝 Creating new provider in Supabase...');
       
-      // Create provider in Supabase
+      // First, create a user in Supabase Auth
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: formData.email,
+        password: 'temp123456', // Temporary password
+        email_confirm: true
+      });
+
+      if (authError) {
+        throw new Error(`Failed to create user: ${authError.message}`);
+      }
+
+      console.log('✅ Auth user created:', authUser.user.id);
+
+      // Create provider in Supabase using the auth user's ID
       const providerData = {
-        user_id: crypto.randomUUID(), // Generate valid UUID for admin-created providers
+        user_id: authUser.user.id, // Use the actual auth user ID
         business_name: formData.businessName,
         owner_name: formData.ownerName,
         email: formData.email,

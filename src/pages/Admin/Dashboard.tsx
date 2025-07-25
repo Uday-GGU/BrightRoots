@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabaseAdmin } from '../../lib/supabase';
+import { supabase, supabaseAdmin } from '../../lib/supabase';
 import { 
   Users, 
   Plus, 
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
-import { dataSyncManager } from '../../utils/dataSync';
+import { ProviderService } from '../../services/providerService';
 
 interface Provider {
   id: string;
