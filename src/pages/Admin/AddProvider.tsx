@@ -4,7 +4,7 @@ import { ArrowLeft, Save, MapPin, User, Phone, Mail, Globe, Building } from 'luc
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
 import { ProviderService } from '../../services/providerService';
-import { dataSyncManager } from '../../utils/dataSync';
+import { supabaseAdmin } from '../../lib/supabase';
 
 const cities = [
   'Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 

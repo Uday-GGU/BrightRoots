@@ -3,6 +3,7 @@ import { Database } from '../types/database';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Missing Supabase environment variables. Please check your .env file.');
@@ -14,6 +15,8 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient<Database>(supabaseUrl, supabaseAnonKey)
   : null as any; // This will cause errors but won't crash the app immediately
 
+// Admin client with service role key to bypass RLS
+export const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceKey)
 
 // Helper functions for common operations
 export const uploadFile = async (
