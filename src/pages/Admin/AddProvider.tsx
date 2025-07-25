@@ -128,7 +128,7 @@ export default function AddProvider() {
       
       // Create provider in Supabase
       const providerData = {
-        user_id: `admin-created-${Date.now()}`, // Temporary user ID for admin-created providers
+        user_id: crypto.randomUUID(), // Generate valid UUID for admin-created providers
         business_name: formData.businessName,
         owner_name: formData.ownerName,
         email: formData.email,
