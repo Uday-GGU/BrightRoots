@@ -16,9 +16,30 @@ export default function Login() {
   const [otp, setOtp] = useState('');
   const [showOtp, setShowOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showResendEmail, setShowResendEmail] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
   const { login, signUp, signInWithPhone, verifyOtp } = useAuth();
   const { showSuccess, showError, showInfo } = useToast();
   const navigate = useNavigate();
+
+  const handleResendVerificationEmail = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: pendingEmail
+      });
+      
+      if (error) throw error;
+      
+      showSuccess('Verification Email Sent', 'Please check your email (including spam folder) for the verification link.');
+    } catch (error: any) {
+      console.error('Resend verification error:', error);
+      showError('Failed to Resend Email', error.message || 'Unable to resend verification email. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +121,7 @@ export default function Login() {
         if (isSignup) {
           await signUp(identifier, password, { name, role: 'parent' });
           showSuccess('Account Created Successfully!', 'Please check your email to verify your account before logging in. You can close this page and return after verification.');
+          setPendingEmail(identifier);
           setIsSignup(false); // Switch back to login mode
           setName(''); // Clear name field
           setPassword(''); // Clear password field
@@ -114,6 +136,8 @@ export default function Login() {
         showError('Login Failed', 'Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {
         showError('Email Not Confirmed', 'Please check your email (including spam folder) and click the confirmation link before logging in.');
+        setShowResendEmail(true);
+        setPendingEmail(identifier);
       } else if (error.message.includes('User already registered')) {
         showError('Account Already Exists', 'An account with this email already exists. Please use the login option instead.');
         setIsSignup(false); // Switch to login mode
@@ -301,6 +325,28 @@ export default function Login() {
               </span>
               {!isLoading && <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             </Button>
+            {/* Resend Verification Email */}
+            {showResendEmail && (
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-medium text-yellow-800">Email Not Verified</h4>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      Didn't receive the verification email?
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResendVerificationEmail}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Sending...' : 'Resend Email'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </form>
 
           {method === 'phone' && showOtp && (
