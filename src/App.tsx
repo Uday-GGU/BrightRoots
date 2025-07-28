@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useToast } from './hooks/useToast';
+import ToastContainer from './components/UI/ToastContainer';
 import BottomNav from './components/Layout/BottomNav';
 import Login from './pages/Login';
 import LocationSetup from './pages/LocationSetup';
@@ -70,6 +72,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const { user, isLoading } = useAuth();
+  const { toasts, removeToast } = useToast();
   const showBottomNav = user && user.role === 'parent' && !['/login', '/location', '/'].includes(window.location.pathname);
 
   // Handle automatic redirects based on user state
@@ -228,6 +231,7 @@ function AppContent() {
       </Routes>
       
       {showBottomNav && <BottomNav />}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }

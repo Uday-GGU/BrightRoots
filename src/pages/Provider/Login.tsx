@@ -3,12 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Users, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../hooks/useToast';
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
 
 export default function ProviderLogin() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,7 +33,7 @@ export default function ProviderLogin() {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      alert('Please fill all fields');
+      showError('Missing Information', 'Please fill all fields');
       return;
     }
 
@@ -59,7 +61,7 @@ export default function ProviderLogin() {
           }
         }));
         
-        alert('Demo provider login successful! Redirecting to dashboard...');
+        showSuccess('Login Successful', 'Welcome to BrightRoots Provider Dashboard!');
         setTimeout(() => {
           window.location.href = '/provider/dashboard';
         }, 1000);
@@ -97,15 +99,15 @@ export default function ProviderLogin() {
       setIsLoading(false);
       
       if (error.message.includes('Invalid login credentials')) {
-        alert('Invalid email or password. Please check your credentials.');
+        showError('Login Failed', 'Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {
-        alert('Please check your email and click the confirmation link before logging in.');
+        showError('Email Not Confirmed', 'Please check your email and click the confirmation link before logging in.');
       } else if (error.message.includes('not registered as a provider')) {
-        alert(error.message);
+        showError('Account Type Error', error.message);
       } else if (error.message.includes('Failed to fetch')) {
-        alert('Unable to connect to the server. Please check your internet connection.');
+        showError('Connection Error', 'Unable to connect to the server. Please check your internet connection.');
       } else {
-        alert(error.message || 'Login failed. Please try again.');
+        showError('Login Failed', error.message || 'Login failed. Please try again.');
       }
     }
   };

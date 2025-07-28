@@ -4,6 +4,7 @@ import { Users, Mail, Lock, User, Phone, DollarSign, BookOpen, ArrowRight } from
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { ProviderService } from '../../services/providerService';
+import { useToast } from '../../hooks/useToast';
 import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
 
@@ -21,6 +22,7 @@ const serviceCategories = [
 export default function ProviderSignup() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -48,17 +50,17 @@ export default function ProviderSignup() {
     // Validation
     if (!formData.name || !formData.email || !formData.password || 
         !formData.category || !formData.phone || !formData.fees) {
-      alert('Please fill all required fields');
+      showError('Missing Information', 'Please fill all required fields');
       return;
     }
 
     if (formData.password.length < 6) {
-      alert('Password must be at least 6 characters long');
+      showError('Invalid Password', 'Password must be at least 6 characters long');
       return;
     }
 
     if (isNaN(Number(formData.fees)) || Number(formData.fees) <= 0) {
-      alert('Please enter a valid fee amount');
+      showError('Invalid Fee', 'Please enter a valid fee amount');
       return;
     }
 
@@ -125,18 +127,18 @@ export default function ProviderSignup() {
       });
       console.log('✅ Sample class created');
 
-      alert('Account created successfully! Please check your email to verify your account, then you can login.');
+      showSuccess('Account Created', 'Please check your email to verify your account, then you can login.');
       navigate('/provider/login');
 
     } catch (error: any) {
       console.error('❌ Provider signup error:', error);
       
       if (error.message.includes('User already registered')) {
-        alert('An account with this email already exists. Please login instead.');
+        showError('Account Exists', 'An account with this email already exists. Please login instead.');
       } else if (error.message.includes('Invalid email')) {
-        alert('Please enter a valid email address.');
+        showError('Invalid Email', 'Please enter a valid email address.');
       } else {
-        alert(`Signup failed: ${error.message}`);
+        showError('Signup Failed', error.message);
       }
     } finally {
       setIsLoading(false);

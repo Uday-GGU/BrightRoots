@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Mail, Phone, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../hooks/useToast';
 import Button from '../components/UI/Button';
 
 export default function Login() {
@@ -16,6 +17,7 @@ export default function Login() {
   const [showOtp, setShowOtp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login, signUp, signInWithPhone, verifyOtp } = useAuth();
+  const { showSuccess, showError, showInfo } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +46,7 @@ export default function Login() {
         ]
       }));
       
-      alert('Demo login successful! Redirecting to home...');
+      showSuccess('Login Successful', 'Welcome to BrightRoots! Redirecting to home...');
       setTimeout(() => {
         window.location.href = '/home';
       }, 1000);
@@ -82,22 +84,22 @@ export default function Login() {
         
         if (error) throw error;
         
-        alert('Check your email for the magic link!');
+        showInfo('Magic Link Sent', 'Check your email for the login link!');
         return;
       } else if (method === 'email' && !useMagicLink) {
         if (!identifier.trim() || !password.trim()) {
-          alert('Please enter both email and password');
+          showError('Missing Information', 'Please enter both email and password');
           return;
         }
         
         if (isSignup && !name.trim()) {
-          alert('Please enter your name');
+          showError('Missing Information', 'Please enter your name');
           return;
         }
         
         if (isSignup) {
           await signUp(identifier, password, { name, role: 'parent' });
-          alert('Account created! Please check your email to verify your account before logging in.');
+          showSuccess('Account Created', 'Please check your email to verify your account before logging in.');
         } else {
           await login(identifier, password, 'parent');
           navigate('/location');
@@ -106,15 +108,15 @@ export default function Login() {
     } catch (error: any) {
       console.error('Login error:', error);
       if (error.message.includes('Invalid login credentials')) {
-        alert('Invalid email or password. Please check your credentials.');
+        showError('Login Failed', 'Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {
-        alert('Please check your email and click the confirmation link before logging in.');
+        showError('Email Not Confirmed', 'Please check your email and click the confirmation link before logging in.');
       } else if (error.message.includes('User already registered')) {
-        alert('An account with this email already exists. Please login instead.');
+        showError('Account Exists', 'An account with this email already exists. Please login instead.');
       } else if (error.message.includes('Failed to fetch')) {
-        alert('Unable to connect to the server. Please check your internet connection and Supabase configuration.');
+        showError('Connection Error', 'Unable to connect to the server. Please check your internet connection.');
       } else {
-        alert(error.message || 'Login failed. Please try again.');
+        showError('Login Failed', error.message || 'Login failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
