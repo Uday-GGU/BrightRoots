@@ -60,7 +60,7 @@ export default function Toast({ id, type, title, message, duration = 5000, onClo
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 max-w-sm w-full transform transition-all duration-300 ${
+      className={`max-w-sm w-full transform transition-all duration-300 ${
         isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'
       }`}
     >
