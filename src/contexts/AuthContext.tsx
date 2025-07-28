@@ -105,156 +105,135 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔗 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
       console.log('🔑 Supabase Key configured:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
 
-      // Try to load from providers table first
-      console.log('📊 Querying providers table...');
-      
-      let provider = null;
-      let providerError = null;
-      
-      try {
-        const { data, error } = await supabase
-          .from('providers')
-          .select('*')
-          .eq('user_id', userId);
-        
-        provider = data;
-        providerError = error;
-      } catch (err) {
-        console.log('⚠️ Provider query failed:', err);
-        providerError = err;
-      }
-
-      console.log('📊 Provider query result:', { provider, providerError });
-
-      // Check if provider exists and no critical error
-      if (provider && provider.length > 0 && !providerError) {
-        const providerData = provider[0];
-        console.log('✅ Provider found, creating provider user:', provider);
-        setUser({
-          _id: userId,
-          id: userId,
-          name: providerData.owner_name,
-          email: providerData.email,
-          phone: providerData.phone,
-          role: 'provider',
-          businessName: providerData.business_name,
-          whatsapp: providerData.whatsapp || undefined,
-          website: providerData.website || undefined,
-          isVerified: providerData.is_verified,
-          location: {
-            city: providerData.city,
-            area: providerData.area,
-            pincode: providerData.pincode,
-            coordinates: providerData.latitude && providerData.longitude ? {
-              lat: providerData.latitude,
-              lng: providerData.longitude
-            } : undefined
-          }
-        });
-        console.log('✅ Provider user created successfully');
-        console.log('🏁 Profile loading completed for provider');
-       setIsLoading(false);
-        return;
-      }
-      
-      // Handle other non-critical errors
-      if (providerError) {
-        console.log('⚠️ Provider query error (non-critical):', providerError);
-      }
-      
-      console.log('👤 No provider found, creating parent user');
-      // If not a provider, create a basic parent user
-      
-      let supabaseUserData = null;
-      let userError = null;
-      
-      try {
-        console.log('🔍 Getting Supabase user data...');
-        const { data, error } = await supabase.auth.getUser();
-        supabaseUserData = data;
-        userError = error;
-      } catch (err) {
-        console.log('⚠️ Getting user data failed:', err);
-        userError = err;
-      }
-      
-      console.log('📋 Supabase user data:', supabaseUserData);
+      // Get Supabase user data first
+      console.log('🔍 Getting Supabase user data...');
+      const { data: supabaseUserData, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
         console.error('❌ Error getting Supabase user:', userError);
-        // Don't throw, create fallback user instead
-        console.log('🔄 Creating fallback user due to user data error');
+        throw userError;
       }
       
-      if (supabaseUserData?.user) {
-        const userRole = supabaseUserData.user.user_metadata?.role || 'parent';
-        console.log('🎭 Determined user role:', userRole);
+      if (!supabaseUserData?.user) {
+        console.error('❌ No user data found');
+        throw new Error('No user data found');
+      }
+      
+      const userRole = supabaseUserData.user.user_metadata?.role || 'parent';
+      console.log('🎭 Determined user role:', userRole);
+      
+      // Only query providers table if user is actually a provider
+      if (userRole === 'provider') {
+        console.log('📊 User is provider, querying providers table...');
         
-        // Create user profile in database for parent users
-        if (userRole === 'parent') {
-          console.log('👤 Creating parent profile in database...');
-          try {
-            // Check if profile already exists
-            const { data: existingProfile, error: profileCheckError } = await supabase
+        try {
+          const { data: provider, error: providerError } = await supabase
+            .from('providers')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+          
+          if (providerError && providerError.code !== 'PGRST116') {
+            console.error('❌ Provider query error:', providerError);
+            throw providerError;
+          }
+          
+          if (provider) {
+            console.log('✅ Provider found, creating provider user');
+            setUser({
+              _id: userId,
+              id: userId,
+              name: provider.owner_name,
+              email: provider.email,
+              phone: provider.phone,
+              role: 'provider',
+              businessName: provider.business_name,
+              whatsapp: provider.whatsapp || undefined,
+              website: provider.website || undefined,
+              isVerified: provider.is_verified,
+              location: {
+                city: provider.city,
+                area: provider.area,
+                pincode: provider.pincode,
+                coordinates: provider.latitude && provider.longitude ? {
+                  lat: provider.latitude,
+                  lng: provider.longitude
+                } : undefined
+              }
+            });
+            return;
+          } else {
+            console.log('⚠️ Provider role but no provider record found');
+          }
+        } catch (err) {
+          console.error('❌ Error querying provider:', err);
+          // Continue to create basic user instead of failing
+        }
+      }
+      
+      // Create parent user (or fallback user)
+      console.log('👤 Creating parent user');
+      
+      // Create user profile in database for parent users
+      if (userRole === 'parent') {
+        console.log('👤 Creating parent profile in database...');
+        try {
+          // Check if profile already exists
+          const { data: existingProfile, error: profileCheckError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', userId)
+            .single();
+          
+          if (profileCheckError && profileCheckError.code === 'PGRST116') {
+            // Profile doesn't exist, create it
+            const { data: newProfile, error: createError } = await supabase
               .from('users')
-              .select('id')
-              .eq('id', userId)
+              .insert({
+                id: userId,
+                name: supabaseUserData.user.user_metadata?.name || 'User',
+                email: supabaseUserData.user.email || '',
+                role: 'parent',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select()
               .single();
             
-            if (profileCheckError && profileCheckError.code === 'PGRST116') {
-              // Profile doesn't exist, create it
-              const { data: newProfile, error: createError } = await supabase
-                .from('users')
-                .insert({
-                  id: userId,
-                  name: supabaseUserData.user.user_metadata?.name || 'User',
-                  email: supabaseUserData.user.email || '',
-                  role: 'parent',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                })
-                .select()
-                .single();
-              
-              if (createError) {
-                console.error('❌ Error creating user profile:', createError);
-              } else {
-                console.log('✅ User profile created successfully:', newProfile);
-              }
-            } else if (!profileCheckError) {
-              console.log('✅ User profile already exists');
+            if (createError) {
+              console.error('❌ Error creating user profile:', createError);
+            } else {
+              console.log('✅ User profile created successfully:', newProfile);
             }
-          } catch (profileError) {
-            console.error('❌ Error handling user profile:', profileError);
+          } else if (!profileCheckError) {
+            console.log('✅ User profile already exists');
           }
+        } catch (profileError) {
+          console.error('❌ Error handling user profile:', profileError);
         }
-        
-        const newUser = {
-          _id: userId,
-          id: userId,
-          name: supabaseUserData.user.user_metadata?.name || 'User',
-          email: supabaseUserData.user.email || '',
-          role: userRole,
-          children: []
-        };
-        
-        console.log('👤 Creating user object:', newUser);
-        setUser(newUser);
-        console.log('✅ Parent/basic user created successfully');
-      } else {
-        console.log('⚠️ No Supabase user found, creating minimal user');
-        // Create minimal user instead of throwing error
       }
+      
+      const newUser = {
+        _id: userId,
+        id: userId,
+        name: supabaseUserData.user.user_metadata?.name || 'User',
+        email: supabaseUserData.user.email || '',
+        role: userRole,
+        children: []
+      };
+      
+      console.log('👤 Creating user object:', newUser);
+      setUser(newUser);
+      console.log('✅ User created successfully');
+      
     } catch (error) {
       console.error('❌ Error loading user profile:', error);
       
-      // Create a minimal fallback user to prevent hanging
-      console.log('🔄 Creating minimal fallback user due to error');
+      // Create minimal fallback user to prevent hanging
       try {
         const { data: fallbackUser, error: fallbackError } = await supabase.auth.getUser();
         if (fallbackUser?.user && !fallbackError) {
           const userRole = fallbackUser.user.user_metadata?.role || 'parent';
-          console.log('🔄 Creating fallback user with role:', userRole);
           setUser({
             _id: userId,
             id: userId,
@@ -263,10 +242,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: userRole,
             children: []
           });
-          console.log('✅ Fallback user created successfully');
+          console.log('✅ Fallback user created');
         } else {
-          console.log('⚠️ Could not create fallback user - no auth data, creating minimal user');
-          // Set a minimal user to prevent hanging
+          // Last resort minimal user
           setUser({
             _id: userId,
             id: userId,
@@ -275,11 +253,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: 'parent',
             children: []
           });
-          console.log('⚠️ Created minimal user to prevent hanging');
         }
       } catch (fallbackError) {
-        console.log('⚠️ Fallback user creation failed:', fallbackError);
-        // Last resort - create minimal user
+        // Emergency minimal user
         setUser({
           _id: userId,
           id: userId,
@@ -288,10 +264,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role: 'parent',
           children: []
         });
-        console.log('🆘 Created emergency minimal user');
       }
     } finally {
-      console.log('🏁 Profile loading completed, setting isLoading to false');
       setIsLoading(false);
     }
   };
