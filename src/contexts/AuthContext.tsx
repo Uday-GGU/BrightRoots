@@ -310,6 +310,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     
     console.log('✅ Login successful, auth data:', data);
+    
+    // Force immediate profile loading and navigation
+    if (data.user) {
+      console.log('🔄 Forcing immediate profile load for navigation');
+      await loadUserProfile(data.user.id);
+    }
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {

@@ -129,7 +129,9 @@ export default function Login() {
           setPassword(''); // Clear password field
         } else {
           await login(identifier, password, 'parent');
-          navigate('/location');
+          console.log('✅ Login completed, checking navigation...');
+          // Don't navigate immediately - let AuthContext handle it
+          // The useEffect in App.tsx will handle proper navigation based on user state
         }
       }
     } catch (error: any) {
