@@ -84,7 +84,7 @@ export default function Login() {
       
       if (method === 'phone' && showOtp) {
         if (!otp || otp.length !== 6) {
-          alert('Please enter a valid 6-digit OTP');
+          showError('Invalid OTP', 'Please enter a valid 6-digit OTP');
           return;
         }
         // Verify OTP
@@ -92,7 +92,7 @@ export default function Login() {
         navigate('/location');
       } else if (method === 'email' && useMagicLink) {
         if (!identifier.trim()) {
-          alert('Please enter your email address');
+          showError('Missing Email', 'Please enter your email address');
           return;
         }
         // Send magic link for email authentication
