@@ -115,8 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase
           .from('providers')
           .select('*')
-          .eq('user_id', userId)
-          .single();
+          .eq('user_id', userId);
         
         provider = data;
         providerError = error;
@@ -128,26 +127,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('📊 Provider query result:', { provider, providerError });
 
       // Check if provider exists and no critical error
-      if (provider && !providerError) {
+      if (provider && provider.length > 0 && !providerError) {
+        const providerData = provider[0];
         console.log('✅ Provider found, creating provider user:', provider);
         setUser({
           _id: userId,
           id: userId,
-          name: provider.owner_name,
-          email: provider.email,
-          phone: provider.phone,
+          name: providerData.owner_name,
+          email: providerData.email,
+          phone: providerData.phone,
           role: 'provider',
-          businessName: provider.business_name,
-          whatsapp: provider.whatsapp || undefined,
-          website: provider.website || undefined,
-          isVerified: provider.is_verified,
+          businessName: providerData.business_name,
+          whatsapp: providerData.whatsapp || undefined,
+          website: providerData.website || undefined,
+          isVerified: providerData.is_verified,
           location: {
-            city: provider.city,
-            area: provider.area,
-            pincode: provider.pincode,
-            coordinates: provider.latitude && provider.longitude ? {
-              lat: provider.latitude,
-              lng: provider.longitude
+            city: providerData.city,
+            area: providerData.area,
+            pincode: providerData.pincode,
+            coordinates: providerData.latitude && providerData.longitude ? {
+              lat: providerData.latitude,
+              lng: providerData.longitude
             } : undefined
           }
         });
@@ -157,10 +157,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      // Handle PGRST116 (no rows found) or other non-critical errors
-      if (providerError && providerError.code === 'PGRST116') {
-        console.log('📝 PGRST116 error (no provider found) - this is expected for parent users');
-      } else if (providerError) {
+      // Handle other non-critical errors
+      if (providerError) {
         console.log('⚠️ Provider query error (non-critical):', providerError);
       }
       
