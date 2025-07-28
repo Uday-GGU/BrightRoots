@@ -128,17 +128,28 @@ export default function ProviderSignup() {
       console.log('✅ Sample class created');
 
       showSuccess('Account Created', 'Please check your email to verify your account, then you can login.');
+      
+      // Clear form data
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        category: '',
+        phone: '',
+        fees: ''
+      });
+      
       navigate('/provider/login');
 
     } catch (error: any) {
       console.error('❌ Provider signup error:', error);
       
       if (error.message.includes('User already registered')) {
-        showError('Account Exists', 'An account with this email already exists. Please login instead.');
+        showError('Account Already Exists', 'An account with this email already exists. Please use the login option instead.');
       } else if (error.message.includes('Invalid email')) {
         showError('Invalid Email', 'Please enter a valid email address.');
       } else {
-        showError('Signup Failed', error.message);
+        showError('Signup Failed', error.message || 'Account creation failed. Please try again.');
       }
     } finally {
       setIsLoading(false);

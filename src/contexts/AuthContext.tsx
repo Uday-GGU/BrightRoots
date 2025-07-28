@@ -315,6 +315,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
+    console.log('🚀 Starting signup process for:', email);
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -327,7 +329,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Signup error:', error);
+      throw error;
+    }
+    
+    console.log('✅ Signup successful:', data);
+    return data;
   };
 
   const signInWithPhone = async (phone: string) => {

@@ -99,7 +99,10 @@ export default function Login() {
         
         if (isSignup) {
           await signUp(identifier, password, { name, role: 'parent' });
-          showSuccess('Account Created', 'Please check your email to verify your account before logging in.');
+          showSuccess('Account Created Successfully!', 'Please check your email to verify your account before logging in. You can close this page and return after verification.');
+          setIsSignup(false); // Switch back to login mode
+          setName(''); // Clear name field
+          setPassword(''); // Clear password field
         } else {
           await login(identifier, password, 'parent');
           navigate('/location');
@@ -110,13 +113,14 @@ export default function Login() {
       if (error.message.includes('Invalid login credentials')) {
         showError('Login Failed', 'Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {
-        showError('Email Not Confirmed', 'Please check your email and click the confirmation link before logging in.');
+        showError('Email Not Confirmed', 'Please check your email (including spam folder) and click the confirmation link before logging in.');
       } else if (error.message.includes('User already registered')) {
-        showError('Account Exists', 'An account with this email already exists. Please login instead.');
+        showError('Account Already Exists', 'An account with this email already exists. Please use the login option instead.');
+        setIsSignup(false); // Switch to login mode
       } else if (error.message.includes('Failed to fetch')) {
         showError('Connection Error', 'Unable to connect to the server. Please check your internet connection.');
       } else {
-        showError('Login Failed', error.message || 'Login failed. Please try again.');
+        showError(isSignup ? 'Signup Failed' : 'Login Failed', error.message || `${isSignup ? 'Account creation' : 'Login'} failed. Please try again.`);
       }
     } finally {
       setIsLoading(false);
