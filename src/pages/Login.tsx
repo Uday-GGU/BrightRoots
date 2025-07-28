@@ -18,6 +18,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [showResendEmail, setShowResendEmail] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
+  const [loginError, setLoginError] = useState('');
   const { login, signUp, signInWithPhone, verifyOtp } = useAuth();
   const { showSuccess, showError, showInfo } = useToast();
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    setLoginError(''); // Clear any previous error
     setIsLoading(true);
     
     // Demo login credentials
@@ -138,6 +140,7 @@ export default function Login() {
       
       if (error.message.includes('Invalid login credentials')) {
         showError('Login Failed', 'Invalid email or password. Please check your credentials.');
+        setLoginError('Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {
         showError('Email Not Confirmed', 'Please check your email (including spam folder) and click the confirmation link before logging in.');
         setShowResendEmail(true);
@@ -329,6 +332,14 @@ export default function Login() {
               </span>
               {!isLoading && <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             </Button>
+            
+            {/* Error message display */}
+            {loginError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700 text-center">{loginError}</p>
+              </div>
+            )}
+            
             {/* Resend Verification Email */}
             {showResendEmail && (
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
