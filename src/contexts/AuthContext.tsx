@@ -192,6 +192,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userRole = supabaseUserData.user.user_metadata?.role || 'parent';
         console.log('🎭 Determined user role:', userRole);
         
+        // Create user profile in database for parent users
+        if (userRole === 'parent') {
+          console.log('👤 Creating parent profile in database...');
+          try {
+            // Check if profile already exists
+            const { data: existingProfile, error: profileCheckError } = await supabase
+              .from('users')
+              .select('id')
+              .eq('id', userId)
+              .single();
+            
+            if (profileCheckError && profileCheckError.code === 'PGRST116') {
+              // Profile doesn't exist, create it
+              const { data: newProfile, error: createError } = await supabase
+                .from('users')
+                .insert({
+                  id: userId,
+                  name: supabaseUserData.user.user_metadata?.name || 'User',
+                  email: supabaseUserData.user.email || '',
+                  role: 'parent',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+              
+              if (createError) {
+                console.error('❌ Error creating user profile:', createError);
+              } else {
+                console.log('✅ User profile created successfully:', newProfile);
+              }
+            } else if (!profileCheckError) {
+              console.log('✅ User profile already exists');
+            }
+          } catch (profileError) {
+            console.error('❌ Error handling user profile:', profileError);
+          }
+        }
+        
         const newUser = {
           _id: userId,
           id: userId,
