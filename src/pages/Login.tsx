@@ -132,6 +132,10 @@ export default function Login() {
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      
+      // Ensure error is properly handled for toast notifications
+      const errorMessage = error?.message || error?.error_description || 'An unexpected error occurred';
+      
       if (error.message.includes('Invalid login credentials')) {
         showError('Login Failed', 'Invalid email or password. Please check your credentials.');
       } else if (error.message.includes('Email not confirmed')) {

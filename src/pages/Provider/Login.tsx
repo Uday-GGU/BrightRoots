@@ -98,16 +98,19 @@ export default function ProviderLogin() {
       console.error('❌ Provider login error:', error);
       setIsLoading(false);
       
-      if (error.message.includes('Invalid login credentials')) {
+      // Ensure error is properly handled for toast notifications
+      const errorMessage = error?.message || error?.error_description || 'An unexpected error occurred';
+      
+      if (errorMessage.includes('Invalid login credentials')) {
         showError('Login Failed', 'Invalid email or password. Please check your credentials.');
-      } else if (error.message.includes('Email not confirmed')) {
+      } else if (errorMessage.includes('Email not confirmed')) {
         showError('Email Not Confirmed', 'Please check your email and click the confirmation link before logging in.');
-      } else if (error.message.includes('not registered as a provider')) {
+      } else if (errorMessage.includes('not registered as a provider')) {
         showError('Account Type Error', error.message);
-      } else if (error.message.includes('Failed to fetch')) {
+      } else if (errorMessage.includes('Failed to fetch')) {
         showError('Connection Error', 'Unable to connect to the server. Please check your internet connection.');
       } else {
-        showError('Login Failed', error.message || 'Login failed. Please try again.');
+        showError('Login Failed', errorMessage);
       }
     }
   };
