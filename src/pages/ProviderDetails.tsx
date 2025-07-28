@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useToast } from '../hooks/useToast';
 import { 
   ArrowLeft, MapPin, Phone, MessageCircle, Star, Clock, Users, 
   Heart, Share, CheckCircle, Camera, Calendar
@@ -14,6 +15,7 @@ export default function ProviderDetails() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [showEnquiryForm, setShowEnquiryForm] = useState(false);
   const [selectedChild, setSelectedChild] = useState('');
   const [interestedClass, setInterestedClass] = useState('');
@@ -35,12 +37,12 @@ export default function ProviderDetails() {
 
   const handleEnquiry = () => {
     if (!selectedChild || !interestedClass || !message.trim()) {
-      alert('Please fill all fields');
+      showError('Missing Information', 'Please fill all fields');
       return;
     }
 
     // Mock enquiry submission
-    alert('Enquiry sent successfully! The provider will contact you soon.');
+    showSuccess('Enquiry Sent', 'Your enquiry has been sent successfully! The provider will contact you soon.');
     setShowEnquiryForm(false);
     navigate('/enquiries');
   };

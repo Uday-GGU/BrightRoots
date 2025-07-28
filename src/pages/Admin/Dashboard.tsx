@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../hooks/useToast';
 import { 
   Users, 
   Plus, 
@@ -41,6 +42,7 @@ interface Stats {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
@@ -264,13 +266,11 @@ export default function AdminDashboard() {
       
     } catch (error) {
       console.error('❌ Error updating provider status:', error);
-      alert('Failed to update provider status. Please try again.');
+      showError('Update Failed', 'Failed to update provider status. Please try again.');
     }
   };
 
   const handleDeleteProvider = async (providerId: string) => {
-    if (!confirm('Are you sure you want to delete this provider?')) return;
-    
     try {
       const { error } = await supabase
         .from('providers')
@@ -279,11 +279,12 @@ export default function AdminDashboard() {
         
       if (error) throw error;
       
+      showSuccess('Provider Deleted', 'Provider has been deleted successfully.');
       await loadProviders();
       
     } catch (error) {
       console.error('❌ Error deleting provider:', error);
-      alert('Failed to delete provider. Please try again.');
+      showError('Delete Failed', 'Failed to delete provider. Please try again.');
     }
   };
 

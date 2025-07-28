@@ -5,6 +5,7 @@ import Button from '../../components/UI/Button';
 import Card from '../../components/UI/Card';
 import { ProviderService } from '../../services/providerService';
 import { supabaseAdmin } from '../../lib/supabase';
+import { useToast } from '../../hooks/useToast';
 
 const cities = [
   'Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 
@@ -39,6 +40,7 @@ const serviceCategories = [
 
 export default function AddProvider() {
   const navigate = useNavigate();
+  const { showSuccess, showError, showInfo } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [locationMethod, setLocationMethod] = useState<'auto' | 'manual'>('manual');
   const [isDetecting, setIsDetecting] = useState(false);
@@ -77,7 +79,7 @@ export default function AddProvider() {
     try {
       // Check if geolocation is supported
       if (!navigator.geolocation) {
-        alert('Geolocation is not supported by this browser');
+        showError('Geolocation Error', 'Geolocation is not supported by this browser');
         return;
       }
 
@@ -101,10 +103,10 @@ export default function AddProvider() {
         pincode: '122001'
       }));
 
-      alert('Location detected successfully! (Demo values filled)');
+      showSuccess('Location Detected', 'Location detected successfully! Demo values filled.');
     } catch (error) {
       console.error('Error detecting location:', error);
-      alert('Could not detect location. Please enter manually.');
+      showError('Location Error', 'Could not detect location. Please enter manually.');
     } finally {
       setIsDetecting(false);
     }
@@ -117,7 +119,7 @@ export default function AddProvider() {
     if (!formData.businessName || !formData.ownerName || !formData.email || 
         !formData.phone || !formData.city || !formData.area || 
         formData.categories.length === 0) {
-      alert('Please fill all required fields and select at least one category');
+      showError('Missing Information', 'Please fill all required fields and select at least one category');
       return;
     }
 
@@ -175,11 +177,11 @@ export default function AddProvider() {
       }
       console.log('✅ Sample classes created');
 
-      alert('Provider added successfully!');
+      showSuccess('Provider Added', 'Provider has been added successfully and is now live!');
       navigate('/admin/dashboard');
     } catch (error) {
       console.error('Error adding provider:', error);
-      alert(`Failed to add provider: ${error?.message || 'Unknown error'}. Please try again.`);
+      showError('Failed to Add Provider', error?.message || 'Unknown error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
