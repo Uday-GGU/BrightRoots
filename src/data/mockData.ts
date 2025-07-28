@@ -29,7 +29,7 @@ export const mockProviders: Provider[] = [
         schedule: ['Mon 4-5 PM', 'Wed 4-5 PM', 'Sat 10-11 AM']
       }
     ],
-    images: ['https://images.pexels.com/photos/164743/pexels-photo-164743.jpeg'],
+    images: ['https://images.pexels.com/photos/164743/pexels-photo-164743.jpeg?auto=compress&cs=tinysrgb&w=400'],
     isVerified: true,
     averageRating: 4.8,
     totalReviews: 24,
@@ -64,7 +64,7 @@ export const mockProviders: Provider[] = [
         schedule: ['Tue 5-6 PM', 'Thu 5-6 PM', 'Sun 9-10 AM']
       }
     ],
-    images: ['https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg'],
+    images: ['https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg?auto=compress&cs=tinysrgb&w=400'],
     isVerified: true,
     averageRating: 4.6,
     totalReviews: 18,
@@ -99,7 +99,7 @@ export const mockProviders: Provider[] = [
         schedule: ['Mon 6-7 PM', 'Wed 6-7 PM']
       }
     ],
-    images: ['https://images.pexels.com/photos/574071/pexels-photo-574071.jpeg'],
+    images: ['https://images.pexels.com/photos/574071/pexels-photo-574071.jpeg?auto=compress&cs=tinysrgb&w=400'],
     isVerified: true,
     averageRating: 4.9,
     totalReviews: 31,
@@ -134,7 +134,7 @@ export const mockProviders: Provider[] = [
         schedule: ['Mon 2-3:30 PM', 'Wed 2-3:30 PM', 'Fri 2-3:30 PM']
       }
     ],
-    images: ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg'],
+    images: ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg?auto=compress&cs=tinysrgb&w=400'],
     isVerified: true,
     averageRating: 4.7,
     totalReviews: 15,

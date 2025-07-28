@@ -182,7 +182,7 @@ export default function Home() {
             feeType: cls.fee_type
           })) || [],
           images: provider.provider_media?.filter(m => m.media_type === 'profile_image').map(m => m.file_path) || 
-                  ['https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg'],
+                  [`https://images.pexels.com/photos/5212320/pexels-photo-5212320.jpeg?auto=compress&cs=tinysrgb&w=400`],
           isVerified: provider.is_verified,
           averageRating: 4.5 + Math.random() * 0.5,
           totalReviews: Math.floor(Math.random() * 50) + 10,

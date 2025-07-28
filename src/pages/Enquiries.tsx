@@ -9,7 +9,12 @@ export default function Enquiries() {
   const { user } = useAuth();
   const [filter, setFilter] = useState<'all' | 'sent' | 'responded' | 'closed'>('all');
 
-  const userEnquiries = mockEnquiries.filter(enquiry => enquiry.parent === user?._id);
+  // For demo users, show all enquiries. For real users, filter by parent ID
+  const isDemoUser = localStorage.getItem('demoUser');
+  const userEnquiries = isDemoUser 
+    ? mockEnquiries 
+    : mockEnquiries.filter(enquiry => enquiry.parent === user?._id);
+    
   const filteredEnquiries = userEnquiries.filter(enquiry => 
     filter === 'all' || enquiry.status === filter
   );
