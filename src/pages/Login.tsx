@@ -135,6 +135,8 @@ export default function Login() {
     } catch (error: any) {
       console.error('Login error:', error);
       
+      setIsLoading(false); // Always reset loading state on error
+      
       // Ensure error is properly handled for toast notifications
       const errorMessage = error?.message || error?.error_description || 'An unexpected error occurred';
       
@@ -153,8 +155,6 @@ export default function Login() {
       } else {
         showError(isSignup ? 'Signup Failed' : 'Login Failed', error.message || `${isSignup ? 'Account creation' : 'Login'} failed. Please try again.`);
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
