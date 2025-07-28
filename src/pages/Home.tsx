@@ -114,6 +114,8 @@ export default function Home() {
         }
         
         setProviders(sortedProviders);
+        setLoading(false);
+        return;
       } else {
         console.log('🔗 Regular user, fetching from Supabase');
         // Fetch published providers from Supabase for real users
@@ -235,7 +237,7 @@ export default function Home() {
       
       setProviders(sortedMockProviders);
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 
