@@ -51,11 +51,10 @@ export class ProviderService {
     const { data, error } = await supabase
       .from('providers')
       .select('*')
-      .eq('user_id', userId)
-      .single();
+      .eq('user_id', userId);
 
-    if (error && error.code !== 'PGRST116') throw error;
-    return data;
+    if (error) throw error;
+    return data && data.length > 0 ? data[0] : null;
   }
 
   static async updateProvider(id: string, data: ProviderUpdate): Promise<Provider> {

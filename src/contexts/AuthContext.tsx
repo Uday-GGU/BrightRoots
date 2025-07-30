@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { ProviderService } from '../services/providerService';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { User } from '../types';
 
@@ -137,16 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('📊 User is provider, querying providers table...');
         
         try {
-          const { data: provider, error: providerError } = await supabase
-            .from('providers')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-          
-          if (providerError && providerError.code !== 'PGRST116') {
-            console.error('❌ Provider query error:', providerError);
-            throw providerError;
-          }
+          const provider = await ProviderService.getProviderByUserId(userId);
           
           if (provider) {
             console.log('✅ Provider found, creating provider user');
