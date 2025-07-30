@@ -253,7 +253,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [userLocation, selectedCategory, user, showAllProviders]);
+  };
 
   const filteredProviders = providers.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
