@@ -6,6 +6,7 @@ import { Database } from '../types/database';
 type Provider = Database['public']['Tables']['providers']['Row'];
 type ProviderClass = Database['public']['Tables']['provider_classes']['Row'];
 type Enquiry = Database['public']['Tables']['enquiries']['Row'];
+import { User } from 'lucide-react';
 
 export function useProvider() {
   const { user } = useAuth();
