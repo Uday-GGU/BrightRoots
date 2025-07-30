@@ -111,6 +111,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (userError) {
         console.error('❌ Error getting Supabase user:', userError);
+        
+        // Handle invalid refresh token errors
+        if (userError.message?.includes('Invalid Refresh Token') || 
+            userError.message?.includes('Refresh Token Not Found') ||
+            userError.message?.includes('Auth session missing')) {
+          console.log('🔄 Invalid session detected, forcing logout');
+          await logout();
+          return;
+        }
+        
         throw userError;
       }
       
@@ -229,6 +239,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
     } catch (error) {
       console.error('❌ Error loading user profile:', error);
+      
+      // Handle authentication errors by forcing logout
+      if (error instanceof Error && 
+          (error.message?.includes('Invalid Refresh Token') || 
+           error.message?.includes('Refresh Token Not Found') ||
+           error.message?.includes('Auth session missing'))) {
+        console.log('🔄 Authentication error detected, forcing logout');
+        await logout();
+        return;
+      }
       
       // Create minimal fallback user to prevent hanging
       try {
