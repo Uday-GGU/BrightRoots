@@ -103,21 +103,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Supabase configuration missing');
       }
 
-      console.log('🔗 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('🔑 Supabase Key configured:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
 
       // Get Supabase user data first
-      console.log('🔍 Getting Supabase user data...');
       const { data: supabaseUserData, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
-        console.error('❌ Error getting Supabase user:', userError);
-        
         // Handle invalid refresh token errors
         if (userError.message?.includes('Invalid Refresh Token') || 
             userError.message?.includes('Refresh Token Not Found') ||
             userError.message?.includes('Auth session missing')) {
-          console.log('🔄 Invalid session detected, forcing logout');
           await logout();
           return;
         }
@@ -126,22 +120,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (!supabaseUserData?.user) {
-        console.error('❌ No user data found');
         throw new Error('No user data found');
       }
       
       const userRole = supabaseUserData.user.user_metadata?.role || 'parent';
-      console.log('🎭 Determined user role:', userRole);
       
       // Only query providers table if user is actually a provider
       if (userRole === 'provider') {
-        console.log('📊 User is provider, querying providers table...');
-        
         try {
           const provider = await ProviderService.getProviderByUserId(userId);
           
           if (provider) {
-            console.log('✅ Provider found, creating provider user');
             setUser({
               _id: userId,
               id: userId,
@@ -165,21 +154,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             return;
           } else {
-            console.log('⚠️ Provider role but no provider record found - redirect to setup');
             // For providers without profile, we'll let the routing handle the redirect
           }
         } catch (err) {
-          console.error('❌ Error querying provider:', err);
           // Continue to create basic user instead of failing
         }
       }
       
       // Create parent user (or fallback user)
-      console.log('👤 Creating parent user');
       
       // Create user profile in database for parent users
       if (userRole === 'parent') {
-        console.log('👤 Creating parent profile in database...');
         try {
           // Check if profile already exists
           const { data: existingProfile, error: profileCheckError } = await supabase
@@ -204,15 +189,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .single();
             
             if (createError) {
-              console.error('❌ Error creating user profile:', createError);
+              // Silently handle profile creation errors
             } else {
-              console.log('✅ User profile created successfully:', newProfile);
+              // Profile created successfully
             }
           } else if (!profileCheckError) {
-            console.log('✅ User profile already exists');
+            // Profile already exists
           }
         } catch (profileError) {
-          console.error('❌ Error handling user profile:', profileError);
+          // Silently handle profile errors
         }
       }
       
@@ -225,19 +210,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         children: []
       };
       
-      console.log('👤 Creating user object:', newUser);
       setUser(newUser);
-      console.log('✅ User created successfully');
       
     } catch (error) {
-      console.error('❌ Error loading user profile:', error);
-      
       // Handle authentication errors by forcing logout
       if (error instanceof Error && 
           (error.message?.includes('Invalid Refresh Token') || 
            error.message?.includes('Refresh Token Not Found') ||
            error.message?.includes('Auth session missing'))) {
-        console.log('🔄 Authentication error detected, forcing logout');
         await logout();
         return;
       }
@@ -255,7 +235,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: userRole,
             children: []
           });
-          console.log('✅ Fallback user created');
         } else {
           // Last resort minimal user
           setUser({
@@ -284,30 +263,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string, role: 'parent' | 'provider' = 'parent') => {
-    console.log('🚀 Starting login process for:', email, 'with role:', role);
-    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
-      console.error('❌ Login error:', error);
       throw error;
     }
     
-    console.log('✅ Login successful, auth data:', data);
-    
     // Force immediate profile loading and navigation
     if (data.user) {
-      console.log('🔄 Forcing immediate profile load for navigation');
       await loadUserProfile(data.user.id);
     }
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
-    console.log('🚀 Starting signup process for:', email);
-    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -321,11 +292,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (error) {
-      console.error('❌ Signup error:', error);
       throw error;
     }
     
-    console.log('✅ Signup successful:', data);
     return data;
   };
 
