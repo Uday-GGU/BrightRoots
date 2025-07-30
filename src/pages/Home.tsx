@@ -46,6 +46,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [showAllProviders, setShowAllProviders] = useState(false);
 
   // 🌍 Get Current Location or use user's saved location
   useEffect(() => {
@@ -97,10 +98,11 @@ export default function Home() {
       
       if (isDemoUser) {
         console.log('👤 Demo user detected, using mock data');
-        // Use mock data for demo users and sort by distance
+        // Use mock data for demo users
         let sortedProviders = [...mockProviders];
         
-        if (userLocation) {
+        // Only sort by distance if user has location and not showing all providers
+        if (userLocation && !showAllProviders) {
           sortedProviders = mockProviders
             .map(provider => ({
               ...provider,
@@ -111,6 +113,12 @@ export default function Home() {
               ...provider,
               distance: Math.round(calculatedDistance * 10) / 10 // Round to 1 decimal
             }));
+        } else {
+          // Show all providers without distance sorting
+          sortedProviders = mockProviders.map(provider => ({
+            ...provider,
+            distance: 0 // Set distance to 0 for "All locations"
+          }));
         }
         
         setProviders(sortedProviders);
@@ -135,8 +143,8 @@ export default function Home() {
           query = query.eq('provider_services.category', selectedCategory);
         }
 
-        // Filter by user's location if available
-        if (user?.location?.city) {
+        // Filter by user's location if available and not showing all providers
+        if (user?.location?.city && !showAllProviders) {
           query = query.eq('city', user.location.city);
         }
 
@@ -198,7 +206,7 @@ export default function Home() {
         }));
 
         // Sort by distance if user location is available
-        if (userLocation) {
+        if (userLocation && !showAllProviders) {
           convertedProviders = convertedProviders
             .map(provider => ({
               ...provider,
@@ -209,6 +217,12 @@ export default function Home() {
               ...provider,
               distance: Math.round(provider.distance * 10) / 10 // Round to 1 decimal
             }));
+        } else if (showAllProviders) {
+          // When showing all providers, set distance to 0
+          convertedProviders = convertedProviders.map(provider => ({
+            ...provider,
+            distance: 0
+          }));
         }
         
         console.log('✅ Converted and sorted providers for display:', convertedProviders);
@@ -239,7 +253,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userLocation, selectedCategory, user, showAllProviders]);
 
   const filteredProviders = providers.filter(provider => {
     const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -250,7 +264,12 @@ export default function Home() {
 
   const getDistanceText = (distance) => {
     if (distance === 0) return 'Online';
+    if (showAllProviders) return 'All locations';
     return `${distance} km away`;
+  };
+
+  const handleViewAllProviders = () => {
+    setShowAllProviders(!showAllProviders);
   };
 
   return (
@@ -264,13 +283,23 @@ export default function Home() {
               <div>
                 <p className="text-xs text-gray-500">You're browsing in</p>
                 <p className="font-medium text-gray-900">
-                  {user?.location ? `${user.location.area}, ${user.location.city}` : 'Select Location'}
+                  {showAllProviders ? 'All Locations' : 
+                   user?.location ? `${user.location.area}, ${user.location.city}` : 'All Locations'}
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              {user?.location && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleViewAllProviders}
+                >
+                  {showAllProviders ? 'Show Nearby' : 'View All'}
+                </Button>
+              )}
               <Button variant="outline" size="sm" to="/location">
-                Change
+                {user?.location ? 'Change' : 'Set Location'}
               </Button>
               <button
                 onClick={logout}
@@ -338,8 +367,10 @@ export default function Home() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">
             {selectedCategory 
-              ? `${categories.find(c => c.id === selectedCategory)?.name} near you`
-              : 'Top-rated providers'
+              ? `${categories.find(c => c.id === selectedCategory)?.name} ${showAllProviders ? 'everywhere' : 'near you'}`
+              : showAllProviders ? 'All providers' 
+              : user?.location ? 'Top-rated providers near you'
+              : 'All providers'
             }
           </h3>
           <span className="text-sm text-gray-500">
@@ -433,7 +464,7 @@ export default function Home() {
                           </span>
                         </div>
                         <span className="text-sm text-gray-500">
-                          {getDistanceText(provider.distance || 0)}
+                          {showAllProviders ? 'All locations' : getDistanceText(provider.distance || 0)}
                         </span>
                       </div>
                       
@@ -472,7 +503,9 @@ export default function Home() {
               <h3 className="text-xl font-medium">No providers found</h3>
               <p className="text-gray-400 mt-2">
                 {providers.length === 0 
-                  ? "No providers have been added yet. Contact admin to add providers."
+                  ? showAllProviders 
+                    ? "No providers available anywhere."
+                    : "No providers have been added yet. Contact admin to add providers."
                   : "Try adjusting your search or browse different categories"
                 }
               </p>
