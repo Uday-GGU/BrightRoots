@@ -213,7 +213,7 @@ export default function ProviderDashboard() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Provider Profile Not Found</h2>
           <p className="text-gray-600 mb-4">Please complete your onboarding process.</p>
-          <Button to="/provider/onboarding">Complete Onboarding</Button>
+          <Button to="/provider/setup">Complete Profile Setup</Button>
         </div>
       </div>
     );
