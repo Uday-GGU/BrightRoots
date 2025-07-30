@@ -11,6 +11,7 @@ import ProviderDetails from './pages/ProviderDetails';
 import Enquiries from './pages/Enquiries';
 import ProviderOnboarding from './pages/Provider/Onboarding';
 import ProviderDashboard from './pages/Provider/Dashboard';
+import SimpleOnboarding from './pages/Provider/SimpleOnboarding';
 import DebugLogin from './pages/DebugLogin';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/Admin/Dashboard';
@@ -183,10 +184,16 @@ function AppContent() {
           </ProviderRoute>
         } />
         
+        <Route path="/provider/setup" element={
+          <ProviderRoute>
+            <SimpleOnboarding />
+          </ProviderRoute>
+        } />
+        
         {/* Catch-all for authenticated providers without profile */}
         <Route path="/provider/*" element={
           user?.role === 'provider' ? (
-            <Navigate to="/provider/onboarding" replace />
+            <Navigate to="/provider/setup" replace />
           ) : (
             <Navigate to="/provider/login" replace />
           )

@@ -163,7 +163,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             return;
           } else {
-            console.log('⚠️ Provider role but no provider record found');
+            console.log('⚠️ Provider role but no provider record found - redirect to setup');
+            // For providers without profile, we'll let the routing handle the redirect
           }
         } catch (err) {
           console.error('❌ Error querying provider:', err);
