@@ -24,7 +24,8 @@ import {
   Phone,
   Mail,
   Save,
-  X
+  X,
+  User
 } from 'lucide-react';
 
 const serviceCategories = [
